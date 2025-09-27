@@ -14,7 +14,7 @@ interface Answer {
 
 interface GameState {
   question: string;
-  answers: Answer[];
+  answers: { [round: number]: Answer[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
@@ -24,15 +24,21 @@ interface GameState {
 export const DisplayView = () => {
   const [gameState, setGameState] = useState<GameState>({
     question: "Sebutkan makanan yang sering dibawa saat piknik!",
-    answers: [
-      { text: "NASI BUNGKUS", points: 40, revealed: false },
-      { text: "SANDWICH", points: 25, revealed: false },
-      { text: "MIE INSTAN", points: 15, revealed: false },
-      { text: "BUAH-BUAHAN", points: 10, revealed: false },
-      { text: "KUE", points: 5, revealed: false },
-      { text: "MINUMAN KEMASAN", points: 3, revealed: false },
-      { text: "KERUPUK", points: 2, revealed: false },
-    ],
+    answers: {
+      1: [
+        { text: "NASI BUNGKUS", points: 40, revealed: false },
+        { text: "SANDWICH", points: 25, revealed: false },
+        { text: "MIE INSTAN", points: 15, revealed: false },
+        { text: "BUAH-BUAHAN", points: 10, revealed: false },
+        { text: "KUE", points: 5, revealed: false },
+        { text: "MINUMAN KEMASAN", points: 3, revealed: false },
+        { text: "KERUPUK", points: 2, revealed: false },
+      ],
+      2: [],
+      3: [],
+      4: [],
+      5: []
+    },
     teamLeft: { name: "ASE", score: 30, strikes: 1 },
     teamRight: { name: "AIS", score: 230, strikes: 3 },
     totalScore: 120,
@@ -54,8 +60,15 @@ export const DisplayView = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const answerCount = 8 - gameState.round;
-  const displayAnswers = gameState.answers.slice(0, answerCount);
+  // Calculate answer count based on round
+  const getAnswerCount = (round: number) => {
+    if (round === 5) return 10; // Bonus round
+    return 8 - round; // 7, 6, 5, 4 for rounds 1-4
+  };
+  
+  const currentRoundAnswers = gameState.answers[gameState.round] || [];
+  const answerCount = getAnswerCount(gameState.round);
+  const displayAnswers = currentRoundAnswers.slice(0, answerCount);
 
   return (
     <div className="relative min-h-screen overflow-hidden">

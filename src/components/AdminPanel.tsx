@@ -20,7 +20,7 @@ interface Answer {
 
 interface GameState {
   question: string;
-  answers: Answer[];
+  answers: { [round: number]: Answer[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
@@ -31,20 +31,28 @@ export const AdminPanel = () => {
   const { toast } = useToast();
   const [gameState, setGameState] = useState<GameState>({
     question: "Sebutkan makanan yang sering dibawa saat piknik!",
-    answers: [
-      { text: "NASI BUNGKUS", points: 40, revealed: false },
-      { text: "SANDWICH", points: 25, revealed: false },
-      { text: "MIE INSTAN", points: 15, revealed: false },
-      { text: "BUAH-BUAHAN", points: 10, revealed: false },
-      { text: "KUE", points: 5, revealed: false },
-      { text: "MINUMAN KEMASAN", points: 3, revealed: false },
-      { text: "KERUPUK", points: 2, revealed: false },
-    ],
+    answers: {
+      1: [
+        { text: "NASI BUNGKUS", points: 40, revealed: false },
+        { text: "SANDWICH", points: 25, revealed: false },
+        { text: "MIE INSTAN", points: 15, revealed: false },
+        { text: "BUAH-BUAHAN", points: 10, revealed: false },
+        { text: "KUE", points: 5, revealed: false },
+        { text: "MINUMAN KEMASAN", points: 3, revealed: false },
+        { text: "KERUPUK", points: 2, revealed: false },
+      ],
+      2: [],
+      3: [],
+      4: [],
+      5: [] // Bonus round
+    },
     teamLeft: { name: "ASE", score: 30, strikes: 1 },
     teamRight: { name: "AIS", score: 230, strikes: 3 },
     totalScore: 120,
     round: 1
   });
+
+  const [selectedRoundForAnswers, setSelectedRoundForAnswers] = useState(1);
 
   const [newAnswer, setNewAnswer] = useState({ text: "", points: 0 });
 
@@ -71,34 +79,37 @@ export const AdminPanel = () => {
     saveGameState({ ...gameState, question });
   };
 
-  const addAnswer = () => {
+  const addAnswer = (round: number = selectedRoundForAnswers) => {
     if (newAnswer.text.trim() && newAnswer.points > 0) {
-      const updatedAnswers = [...gameState.answers, { ...newAnswer, revealed: false }];
+      const updatedAnswers = { ...gameState.answers };
+      updatedAnswers[round] = [...(updatedAnswers[round] || []), { ...newAnswer, revealed: false }];
       saveGameState({ ...gameState, answers: updatedAnswers });
       setNewAnswer({ text: "", points: 0 });
-      toast({ title: "Jawaban ditambahkan!" });
+      toast({ title: `Jawaban ditambahkan ke babak ${round}!` });
     }
   };
 
-  const updateAnswer = (index: number, field: keyof Answer, value: string | number | boolean) => {
-    const updatedAnswers = [...gameState.answers];
-    updatedAnswers[index] = { ...updatedAnswers[index], [field]: value };
+  const updateAnswer = (index: number, field: keyof Answer, value: string | number | boolean, round: number = selectedRoundForAnswers) => {
+    const updatedAnswers = { ...gameState.answers };
+    updatedAnswers[round] = [...(updatedAnswers[round] || [])];
+    updatedAnswers[round][index] = { ...updatedAnswers[round][index], [field]: value };
     saveGameState({ ...gameState, answers: updatedAnswers });
   };
 
-  const deleteAnswer = (index: number) => {
-    const updatedAnswers = gameState.answers.filter((_, i) => i !== index);
+  const deleteAnswer = (index: number, round: number = selectedRoundForAnswers) => {
+    const updatedAnswers = { ...gameState.answers };
+    updatedAnswers[round] = (updatedAnswers[round] || []).filter((_, i) => i !== index);
     saveGameState({ ...gameState, answers: updatedAnswers });
-    toast({ title: "Jawaban dihapus!" });
+    toast({ title: `Jawaban dihapus dari babak ${round}!` });
   };
 
-  const revealAnswer = (index: number) => {
-    updateAnswer(index, 'revealed', true);
+  const revealAnswer = (index: number, round: number = gameState.round) => {
+    updateAnswer(index, 'revealed', true, round);
     toast({ title: `Jawaban ${index + 1} diungkap!` });
   };
 
-  const hideAnswer = (index: number) => {
-    updateAnswer(index, 'revealed', false);
+  const hideAnswer = (index: number, round: number = gameState.round) => {
+    updateAnswer(index, 'revealed', false, round);
   };
 
   const updateTeam = (side: 'left' | 'right', field: keyof Team, value: string | number) => {
@@ -108,7 +119,8 @@ export const AdminPanel = () => {
   };
 
   const updateTotalScore = () => {
-    const total = gameState.answers
+    const currentRoundAnswers = gameState.answers[gameState.round] || [];
+    const total = currentRoundAnswers
       .filter(answer => answer.revealed)
       .reduce((sum, answer) => sum + answer.points, 0);
     saveGameState({ ...gameState, totalScore: total });
@@ -117,18 +129,31 @@ export const AdminPanel = () => {
   const resetGame = () => {
     const resetState: GameState = {
       question: "",
-      answers: [],
+      answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
       teamLeft: { name: "TIM A", score: 0, strikes: 0 },
       teamRight: { name: "TIM B", score: 0, strikes: 0 },
       totalScore: 0,
       round: 1
     };
     saveGameState(resetState);
+    setSelectedRoundForAnswers(1);
     toast({ title: "Game direset!" });
   };
 
-  const answerCount = 8 - gameState.round;
-  const displayAnswers = gameState.answers.slice(0, answerCount);
+  const getAnswerCount = (round: number) => {
+    if (round === 5) return 10; // Bonus round
+    return 8 - round; // 7, 6, 5, 4 for rounds 1-4
+  };
+  
+  const currentRoundAnswers = gameState.answers[gameState.round] || [];
+  const selectedRoundAnswers = gameState.answers[selectedRoundForAnswers] || [];
+  const answerCount = getAnswerCount(gameState.round);
+  const displayAnswers = currentRoundAnswers.slice(0, answerCount);
+
+  const getRoundName = (round: number) => {
+    if (round === 5) return "Bonus";
+    return `Babak ${round}`;
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -173,14 +198,17 @@ export const AdminPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="round">Babak</Label>
-                    <Input
-                      id="round"
-                      type="number"
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={gameState.round}
                       onChange={(e) => saveGameState({ ...gameState, round: parseInt(e.target.value) || 1 })}
-                      min="1"
-                      max="7"
-                    />
+                    >
+                      <option value={1}>Babak 1 (7 jawaban)</option>
+                      <option value={2}>Babak 2 (6 jawaban)</option>
+                      <option value={3}>Babak 3 (5 jawaban)</option>
+                      <option value={4}>Babak 4 (4 jawaban)</option>
+                      <option value={5}>Babak Bonus (10 jawaban)</option>
+                    </select>
                   </div>
                   <div>
                     <Label>Total Skor Saat Ini</Label>
@@ -198,7 +226,7 @@ export const AdminPanel = () => {
             {/* Quick Answer Reveal */}
             <Card>
               <CardHeader>
-                <CardTitle>Jawaban ({displayAnswers.length} dari {answerCount})</CardTitle>
+                <CardTitle>{getRoundName(gameState.round)} - Jawaban ({displayAnswers.length} dari {answerCount})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,7 +245,7 @@ export const AdminPanel = () => {
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => answer.revealed ? hideAnswer(index) : revealAnswer(index)}
+                        onClick={() => answer.revealed ? hideAnswer(index, gameState.round) : revealAnswer(index, gameState.round)}
                         variant={answer.revealed ? "destructive" : "default"}
                       >
                         {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
@@ -225,6 +253,13 @@ export const AdminPanel = () => {
                     </div>
                   ))}
                 </div>
+                {gameState.round === 5 && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Babak Bonus:</strong> 5 jawaban pertama untuk orang pertama, 5 jawaban terakhir untuk orang kedua
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -233,7 +268,27 @@ export const AdminPanel = () => {
           <TabsContent value="answers" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Tambah Jawaban Baru</CardTitle>
+                <CardTitle>Pilih Babak untuk Kelola Jawaban</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((round) => (
+                    <Button
+                      key={round}
+                      variant={selectedRoundForAnswers === round ? "default" : "outline"}
+                      onClick={() => setSelectedRoundForAnswers(round)}
+                      className="w-full"
+                    >
+                      {getRoundName(round)}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Tambah Jawaban Baru - {getRoundName(selectedRoundForAnswers)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
@@ -257,35 +312,39 @@ export const AdminPanel = () => {
                     />
                   </div>
                   <div className="flex items-end">
-                    <Button onClick={addAnswer}>Tambah</Button>
+                    <Button onClick={() => addAnswer(selectedRoundForAnswers)}>Tambah</Button>
                   </div>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Max jawaban: {getAnswerCount(selectedRoundForAnswers)} | 
+                  Jawaban saat ini: {selectedRoundAnswers.length}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Daftar Jawaban</CardTitle>
+                <CardTitle>Daftar Jawaban - {getRoundName(selectedRoundForAnswers)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {gameState.answers.map((answer, index) => (
+                  {selectedRoundAnswers.map((answer, index) => (
                     <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
                       <span className="font-bold w-8">{index + 1}.</span>
                       <Input
                         value={answer.text}
-                        onChange={(e) => updateAnswer(index, 'text', e.target.value)}
+                        onChange={(e) => updateAnswer(index, 'text', e.target.value, selectedRoundForAnswers)}
                         className="flex-1"
                       />
                       <Input
                         type="number"
                         value={answer.points}
-                        onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0)}
+                        onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
                         className="w-20"
                       />
                       <Button
                         size="sm"
-                        onClick={() => updateAnswer(index, 'revealed', !answer.revealed)}
+                        onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
                         variant={answer.revealed ? "destructive" : "default"}
                       >
                         {answer.revealed ? 'Hide' : 'Show'}
@@ -293,13 +352,25 @@ export const AdminPanel = () => {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => deleteAnswer(index)}
+                        onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
                       >
                         Hapus
                       </Button>
                     </div>
                   ))}
+                  {selectedRoundAnswers.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      Belum ada jawaban untuk {getRoundName(selectedRoundForAnswers)}
+                    </p>
+                  )}
                 </div>
+                {selectedRoundForAnswers === 5 && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Babak Bonus:</strong> Jawaban 1-5 untuk orang pertama, jawaban 6-10 untuk orang kedua
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
