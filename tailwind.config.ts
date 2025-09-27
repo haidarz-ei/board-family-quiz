@@ -47,6 +47,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        game: {
+          primary: "hsl(var(--game-primary))",
+          "primary-dark": "hsl(var(--game-primary-dark))",
+          gold: "hsl(var(--game-gold))",
+          "gold-dark": "hsl(var(--game-gold-dark))",
+          silver: "hsl(var(--game-silver))",
+          red: "hsl(var(--game-red))",
+          green: "hsl(var(--game-green))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -80,10 +89,76 @@ export default {
             height: "0",
           },
         },
+        "flip": {
+          "0%": { 
+            transform: "rotateY(0deg)",
+            "background-color": "hsl(var(--game-primary))"
+          },
+          "50%": { 
+            transform: "rotateY(90deg)",
+            "background-color": "hsl(var(--game-primary))"
+          },
+          "100%": { 
+            transform: "rotateY(0deg)",
+            "background-color": "hsl(var(--game-gold))"
+          },
+        },
+        "bounce-in": {
+          "0%": { 
+            transform: "scale(0.3) rotate(-5deg)",
+            opacity: "0"
+          },
+          "50%": { 
+            transform: "scale(1.1) rotate(2deg)",
+            opacity: "1"
+          },
+          "100%": { 
+            transform: "scale(1) rotate(0deg)",
+            opacity: "1"
+          },
+        },
+        "glow": {
+          "0%, 100%": { 
+            "box-shadow": "0 0 20px hsl(var(--game-gold), 0.5)"
+          },
+          "50%": { 
+            "box-shadow": "0 0 40px hsl(var(--game-gold), 0.8)"
+          },
+        },
+        "strike": {
+          "0%": { 
+            transform: "scale(1) rotate(0deg)",
+            "background-color": "hsl(var(--game-red))"
+          },
+          "25%": { 
+            transform: "scale(1.1) rotate(-2deg)"
+          },
+          "75%": { 
+            transform: "scale(1.1) rotate(2deg)"
+          },
+          "100%": { 
+            transform: "scale(1) rotate(0deg)",
+            "background-color": "hsl(var(--game-red))"
+          },
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "flip": "flip 0.8s ease-in-out",
+        "bounce-in": "bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+        "glow": "glow 2s ease-in-out infinite",
+        "strike": "strike 0.6s ease-in-out",
+      },
+      backgroundImage: {
+        "gradient-game": "var(--gradient-game)",
+        "gradient-gold": "var(--gradient-gold)",
+        "gradient-card": "var(--gradient-card)",
+      },
+      boxShadow: {
+        "glow": "var(--shadow-glow)",
+        "gold": "var(--shadow-gold)",
+        "card": "var(--shadow-card)",
       },
     },
   },
