@@ -71,124 +71,97 @@ export const DisplayView = () => {
   const displayAnswers = currentRoundAnswers.slice(0, answerCount);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background Video */}
-      <video 
-        autoPlay 
-        muted 
-        loop 
-        className="absolute top-0 left-0 w-full h-full object-cover z-0"
-      >
+    <div>
+      <video autoPlay muted loop id="bgVideo" className="fixed top-0 left-0 w-full h-full object-cover z-0">
         <source src="/video/family100-bg.mp4" type="video/mp4" />
+        Browser Anda tidak mendukung mp4.
       </video>
-      
-      {/* Overlay untuk memastikan konten terlihat */}
-      <div className="absolute inset-0 bg-black/30 z-10"></div>
 
-      {/* Game Container */}
-      <div className="relative z-20 flex items-center justify-between h-screen p-8">
+      <div className="game-container relative z-10 flex items-center justify-between min-h-screen p-8">
         
         {/* TIM KIRI */}
-        <div className="flex flex-col items-center space-y-6">
-          <div className="bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold">
-            <div className="text-3xl font-bold text-primary-foreground text-center">
-              {gameState.teamLeft.name}
-            </div>
+        <div className="team-wrapper flex flex-col items-center space-y-6">
+          <div className="team-name bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold text-3xl font-bold text-primary-foreground text-center">
+            {gameState.teamLeft.name}
           </div>
           
-          <div className="bg-gradient-card p-6 rounded-2xl shadow-card">
-            <div className="text-6xl font-bold text-primary text-center">
+          <div className="team-box bg-gradient-card p-6 rounded-2xl shadow-card">
+            <div className="team-score text-6xl font-bold text-primary text-center">
               {gameState.teamLeft.score}
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="strikes flex space-x-2">
             {[1, 2, 3].map((num) => (
-              <div
+              <span
                 key={num}
-                className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
+                className={`strike w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
                   gameState.teamLeft.strikes >= num ? 'bg-game-red animate-strike' : 'bg-secondary/50'
                 }`}
               >
                 ❌
-              </div>
+              </span>
             ))}
           </div>
         </div>
 
         {/* PAPAN JAWABAN */}
-        <div className="flex flex-col items-center space-y-6">
-          {/* Question */}
-          <div className="bg-gradient-card p-6 rounded-2xl shadow-card max-w-4xl">
-            <h2 className="text-3xl font-bold text-primary text-center">
-              {gameState.question}
-            </h2>
-          </div>
-
-          {/* Answer Board */}
-          <div className="bg-gradient-card p-8 rounded-3xl shadow-card">
-            <div className="space-y-3">
+        <div className="board-wrapper flex flex-col items-center space-y-6">
+          <div className="board bg-gradient-card p-8 rounded-3xl shadow-card">
+            <ul className="answers space-y-3">
               {displayAnswers.map((answer, index) => (
-                <div
-                  key={index}
-                  className={`flex items-center justify-between px-8 py-4 rounded-xl transition-all duration-500 ${
+                <li key={index} className="answer-wrap">
+                  <div className={`answer-row flex items-center justify-between px-8 py-4 rounded-xl transition-all duration-500 ${
                     answer.revealed
                       ? 'bg-gradient-gold text-primary-foreground animate-flip'
                       : 'bg-game-primary text-white'
-                  } shadow-lg`}
-                  style={{ minWidth: '500px' }}
-                >
-                  <div className="flex items-center space-x-6">
-                    <div className="text-3xl font-bold w-12 text-center">
+                  } shadow-lg`} style={{ minWidth: '500px' }}>
+                    <div className="number text-3xl font-bold w-12 text-center">
                       {index + 1}
                     </div>
-                    <div className="text-2xl font-bold">
-                      {answer.revealed ? answer.text : '________________'}
+                    <div className="text text-2xl font-bold flex-1 text-center">
+                      {answer.revealed ? answer.text : '__________'}
+                    </div>
+                    <div className="points text-3xl font-bold w-16 text-center">
+                      {answer.revealed ? answer.points : '__'}
                     </div>
                   </div>
-                  <div className="text-3xl font-bold">
-                    {answer.revealed ? answer.points : '___'}
-                  </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Total Score */}
-          <div className="bg-gradient-gold p-6 rounded-2xl shadow-gold">
-            <div className="text-center">
-              <div className="text-xl font-bold text-primary-foreground mb-2">TOTAL</div>
-              <div className="text-4xl font-bold text-primary-foreground">
-                {gameState.totalScore}
-              </div>
+          {/* TOTAL SCORE DI LUAR BOARD */}
+          <div className="total-box bg-gradient-gold p-6 rounded-2xl shadow-gold">
+            <div className="total-label text-xl font-bold text-primary-foreground mb-2 text-center">TOTAL</div>
+            <div className="total-score text-4xl font-bold text-primary-foreground text-center">
+              {gameState.totalScore}
             </div>
           </div>
         </div>
 
         {/* TIM KANAN */}
-        <div className="flex flex-col items-center space-y-6">
-          <div className="bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold">
-            <div className="text-3xl font-bold text-primary-foreground text-center">
-              {gameState.teamRight.name}
-            </div>
+        <div className="team-wrapper flex flex-col items-center space-y-6">
+          <div className="team-name bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold text-3xl font-bold text-primary-foreground text-center">
+            {gameState.teamRight.name}
           </div>
           
-          <div className="bg-gradient-card p-6 rounded-2xl shadow-card">
-            <div className="text-6xl font-bold text-primary text-center">
+          <div className="team-box bg-gradient-card p-6 rounded-2xl shadow-card">
+            <div className="team-score text-6xl font-bold text-primary text-center">
               {gameState.teamRight.score}
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="strikes flex space-x-2">
             {[1, 2, 3].map((num) => (
-              <div
+              <span
                 key={num}
-                className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
+                className={`strike w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
                   gameState.teamRight.strikes >= num ? 'bg-game-red animate-strike' : 'bg-secondary/50'
                 }`}
               >
                 ❌
-              </div>
+              </span>
             ))}
           </div>
         </div>
