@@ -19,6 +19,7 @@ interface GameState {
   teamRight: Team;
   totalScore: number;
   round: number;
+  currentPlayingTeam: 'left' | 'right' | null;
 }
 
 export const DisplayView = () => {
@@ -42,7 +43,8 @@ export const DisplayView = () => {
     teamLeft: { name: "ASE", score: 30, strikes: 1 },
     teamRight: { name: "AIS", score: 230, strikes: 3 },
     totalScore: 120,
-    round: 1
+    round: 1,
+    currentPlayingTeam: null
   });
 
   // Listen for updates from admin panel

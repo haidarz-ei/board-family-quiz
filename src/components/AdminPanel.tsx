@@ -25,6 +25,7 @@ interface GameState {
   teamRight: Team;
   totalScore: number;
   round: number;
+  currentPlayingTeam: 'left' | 'right' | null;
 }
 
 export const AdminPanel = () => {
@@ -49,7 +50,8 @@ export const AdminPanel = () => {
     teamLeft: { name: "ASE", score: 30, strikes: 1 },
     teamRight: { name: "AIS", score: 230, strikes: 3 },
     totalScore: 120,
-    round: 1
+    round: 1,
+    currentPlayingTeam: null
   });
 
   const [selectedRoundForAnswers, setSelectedRoundForAnswers] = useState(1);
@@ -133,7 +135,8 @@ export const AdminPanel = () => {
       teamLeft: { name: "TIM A", score: 0, strikes: 0 },
       teamRight: { name: "TIM B", score: 0, strikes: 0 },
       totalScore: 0,
-      round: 1
+      round: 1,
+      currentPlayingTeam: null
     };
     saveGameState(resetState);
     setSelectedRoundForAnswers(1);
@@ -153,6 +156,57 @@ export const AdminPanel = () => {
   const getRoundName = (round: number) => {
     if (round === 5) return "Bonus";
     return `Babak ${round}`;
+  };
+
+  // Game Control Functions for Family 100 Rules
+  const setPlayingTeam = (team: 'left' | 'right' | null) => {
+    saveGameState({ ...gameState, currentPlayingTeam: team });
+    toast({ title: team ? `Tim ${team === 'left' ? 'Kiri' : 'Kanan'} sedang bermain` : 'Tidak ada tim yang bermain' });
+  };
+
+  const addStrike = (team: 'left' | 'right') => {
+    const teamKey = team === 'left' ? 'teamLeft' : 'teamRight';
+    const currentStrikes = gameState[teamKey].strikes;
+    if (currentStrikes < 3) {
+      const newStrikes = currentStrikes + 1;
+      updateTeam(team, 'strikes', newStrikes);
+      toast({ 
+        title: `Strike ditambahkan untuk Tim ${team === 'left' ? 'Kiri' : 'Kanan'}`, 
+        description: `Strike: ${newStrikes}/3` 
+      });
+      
+      if (newStrikes === 3) {
+        toast({ 
+          title: "3 Strike! Tim lawan mendapat kesempatan", 
+          description: "Giliran berpindah ke tim lawan untuk rebutan poin" 
+        });
+      }
+    }
+  };
+
+  const resetStrikes = (team: 'left' | 'right') => {
+    updateTeam(team, 'strikes', 0);
+    toast({ title: `Strike direset untuk Tim ${team === 'left' ? 'Kiri' : 'Kanan'}` });
+  };
+
+  const giveRoundPointsToTeam = (team: 'left' | 'right') => {
+    const currentScore = team === 'left' ? gameState.teamLeft.score : gameState.teamRight.score;
+    const newScore = currentScore + gameState.totalScore;
+    updateTeam(team, 'score', newScore);
+    
+    // Reset total score and strikes for new round
+    saveGameState({ 
+      ...gameState, 
+      totalScore: 0,
+      teamLeft: { ...gameState.teamLeft, strikes: 0 },
+      teamRight: { ...gameState.teamRight, strikes: 0 },
+      currentPlayingTeam: null
+    });
+    
+    toast({ 
+      title: `Poin babak diberikan ke Tim ${team === 'left' ? 'Kiri' : 'Kanan'}!`, 
+      description: `+${gameState.totalScore} poin` 
+    });
   };
 
   return (
@@ -219,6 +273,101 @@ export const AdminPanel = () => {
                       </Button>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Game Control Features */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Kontrol Permainan Family 100</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Tim Yang Sedang Bermain</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant={gameState.currentPlayingTeam === 'left' ? 'default' : 'outline'}
+                      onClick={() => setPlayingTeam('left')}
+                    >
+                      Tim Kiri ({gameState.teamLeft.name})
+                    </Button>
+                    <Button
+                      variant={gameState.currentPlayingTeam === 'right' ? 'default' : 'outline'}
+                      onClick={() => setPlayingTeam('right')}
+                    >
+                      Tim Kanan ({gameState.teamRight.name})
+                    </Button>
+                    <Button
+                      variant={gameState.currentPlayingTeam === null ? 'default' : 'outline'}
+                      onClick={() => setPlayingTeam(null)}
+                    >
+                      Tidak Ada
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Kontrol Tim Kiri - Strike: {gameState.teamLeft.strikes}/3</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => addStrike('left')}
+                        disabled={gameState.teamLeft.strikes >= 3}
+                      >
+                        Tambah Strike
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => resetStrikes('left')}
+                      >
+                        Reset Strike
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label>Kontrol Tim Kanan - Strike: {gameState.teamRight.strikes}/3</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => addStrike('right')}
+                        disabled={gameState.teamRight.strikes >= 3}
+                      >
+                        Tambah Strike
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => resetStrikes('right')}
+                      >
+                        Reset Strike
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Berikan Poin Babak (Total: {gameState.totalScore})</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="default"
+                      onClick={() => giveRoundPointsToTeam('left')}
+                      disabled={gameState.totalScore === 0}
+                    >
+                      Berikan ke Tim Kiri
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={() => giveRoundPointsToTeam('right')}
+                      disabled={gameState.totalScore === 0}
+                    >
+                      Berikan ke Tim Kanan
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Memberikan poin akan mereset total skor dan strike kedua tim untuk babak baru
+                  </p>
                 </div>
               </CardContent>
             </Card>
