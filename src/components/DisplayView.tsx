@@ -73,7 +73,7 @@ export const DisplayView = () => {
   return (
     <div>
       <video autoPlay muted loop id="bgVideo" className="fixed top-0 left-0 w-full h-full object-cover z-0">
-        <source src="/video/family100-bg.mp4" type="video/mp4" />
+        <source src={gameState.round === 5 ? "/video/1.mp4" : "/video/2.mp4"} type="video/mp4" />
         Browser Anda tidak mendukung mp4.
       </video>
 
