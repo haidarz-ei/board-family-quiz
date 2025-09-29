@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 interface Team {
   name: string;
@@ -38,26 +38,27 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
       </video>
 
       <div className="game-container relative z-10 flex items-start justify-center p-10 gap-32 flex-nowrap text-gray-800">
-        {/* TIM KIRI */}
-        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
-          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
-            {gameState.teamLeft.name}
-          </div>
-
-          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
-            <div className="team-score text-[42px] font-bold text-white">
-              {gameState.teamLeft.score}
+        {gameState.round !== 5 && (
+          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+            <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
+              {gameState.teamLeft.name}
             </div>
-          </div>
 
-          {gameState.teamLeft.strikes > 0 && (
-            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
-              {[1, 2, 3].map((num) =>
-                gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
-              )}
+            <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
+              <div className="team-score text-[42px] font-bold text-white">
+                {gameState.teamLeft.score}
+              </div>
             </div>
-          )}
-        </div>
+
+            {gameState.teamLeft.strikes > 0 && (
+              <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+                {[1, 2, 3].map((num) =>
+                  gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* PAPAN JAWABAN BONUS */}
         <div className="board-wrapper flex flex-col items-center gap-5" style={{marginTop: '100px'}}>
@@ -126,26 +127,27 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
           </div>
         </div>
 
-        {/* TIM KANAN */}
-        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
-          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
-            {gameState.teamRight.name}
-          </div>
-
-          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
-            <div className="team-score text-[42px] font-bold text-white">
-              {gameState.teamRight.score}
+        {gameState.round !== 5 && (
+          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+            <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
+              {gameState.teamRight.name}
             </div>
-          </div>
 
-          {gameState.teamRight.strikes > 0 && (
-            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
-              {[1, 2, 3].map((num) =>
-                gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
-              )}
+            <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
+              <div className="team-score text-[42px] font-bold text-white">
+                {gameState.teamRight.score}
+              </div>
             </div>
-          )}
-        </div>
+
+            {gameState.teamRight.strikes > 0 && (
+              <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+                {[1, 2, 3].map((num) =>
+                  gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

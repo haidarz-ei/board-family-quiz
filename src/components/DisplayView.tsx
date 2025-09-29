@@ -60,7 +60,7 @@ export const DisplayView = () => {
     if (round === 5) return 10; // Bonus round
     return 8 - round; // 7, 6, 5, 4 for rounds 1-4
   };
-  
+
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = getAnswerCount(gameState.round);
   const displayAnswers = Array.from({ length: answerCount }, (_, index) => {

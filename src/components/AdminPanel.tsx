@@ -708,13 +708,6 @@ export const AdminPanel = () => {
                                 />
                                 <Button
                                   size="sm"
-                                  onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
-                                  variant={answer.revealed ? "destructive" : "default"}
-                                >
-                                  {answer.revealed ? 'Hide' : 'Show'}
-                                </Button>
-                                <Button
-                                  size="sm"
                                   variant="destructive"
                                   onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
                                 >
@@ -775,13 +768,6 @@ export const AdminPanel = () => {
                                 />
                                 <Button
                                   size="sm"
-                                  onClick={() => updateAnswer(actualIndex, 'revealed', !answer.revealed, selectedRoundForAnswers)}
-                                  variant={answer.revealed ? "destructive" : "default"}
-                                >
-                                  {answer.revealed ? 'Hide' : 'Show'}
-                                </Button>
-                                <Button
-                                  size="sm"
                                   variant="destructive"
                                   onClick={() => deleteAnswer(actualIndex, selectedRoundForAnswers)}
                                 >
@@ -837,13 +823,6 @@ export const AdminPanel = () => {
                                   onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
                                   className="w-20"
                                 />
-                                <Button
-                                  size="sm"
-                                  onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
-                                  variant={answer.revealed ? "destructive" : "default"}
-                                >
-                                  {answer.revealed ? 'Hide' : 'Show'}
-                                </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
