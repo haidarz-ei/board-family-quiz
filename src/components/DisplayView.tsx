@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BonusDisplayView } from "./BonusDisplayView";
 
 interface Team {
   name: string;
@@ -24,25 +25,17 @@ interface GameState {
 
 export const DisplayView = () => {
   const [gameState, setGameState] = useState<GameState>({
-    question: "Sebutkan makanan yang sering dibawa saat piknik!",
+    question: "",
     answers: {
-      1: [
-        { text: "NASI BUNGKUS", points: 40, revealed: false },
-        { text: "SANDWICH", points: 25, revealed: false },
-        { text: "MIE INSTAN", points: 15, revealed: false },
-        { text: "BUAH-BUAHAN", points: 10, revealed: false },
-        { text: "KUE", points: 5, revealed: false },
-        { text: "MINUMAN KEMASAN", points: 3, revealed: false },
-        { text: "KERUPUK", points: 2, revealed: false },
-      ],
+      1: [],
       2: [],
       3: [],
       4: [],
       5: []
     },
-    teamLeft: { name: "ASE", score: 30, strikes: 1 },
-    teamRight: { name: "AIS", score: 230, strikes: 3 },
-    totalScore: 120,
+    teamLeft: { name: "TIM A", score: 0, strikes: 0 },
+    teamRight: { name: "TIM B", score: 0, strikes: 0 },
+    totalScore: 0,
     round: 1,
     currentPlayingTeam: null
   });
@@ -70,61 +63,65 @@ export const DisplayView = () => {
   
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = getAnswerCount(gameState.round);
-  const displayAnswers = currentRoundAnswers.slice(0, answerCount);
+  const displayAnswers = Array.from({ length: answerCount }, (_, index) => {
+    const answer = currentRoundAnswers[index];
+    return answer || { text: '', points: 0, revealed: false };
+  });
+
+  const isBonusRound = gameState.round === 5;
+
+  if (isBonusRound) {
+    return <BonusDisplayView gameState={gameState} />;
+  }
 
   return (
-    <div>
-      <video autoPlay muted loop id="bgVideo" className="fixed top-0 left-0 w-full h-full object-cover z-0">
-        <source src={gameState.round === 5 ? "/video/1.mp4" : "/video/2.mp4"} type="video/mp4" />
+    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans relative">
+      <video autoPlay muted loop id="bgVideo" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-auto z-0">
+        <source src="/video/2.mp4" type="video/mp4" />
         Browser Anda tidak mendukung mp4.
       </video>
 
-      <div className="game-container relative z-10 flex items-center justify-between min-h-screen p-8">
-        
+      <div className="game-container relative z-10 flex items-start justify-center p-10 gap-32 flex-nowrap text-white">
+
         {/* TIM KIRI */}
-        <div className="team-wrapper flex flex-col items-center space-y-6">
-          <div className="team-name bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold text-3xl font-bold text-primary-foreground text-center">
+        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
             {gameState.teamLeft.name}
           </div>
-          
-          <div className="team-box bg-gradient-card p-6 rounded-2xl shadow-card">
-            <div className="team-score text-6xl font-bold text-primary text-center">
+
+          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
+            <div className="team-score text-[42px] font-bold text-white">
               {gameState.teamLeft.score}
             </div>
           </div>
 
-          <div className="strikes flex space-x-2">
-            {[1, 2, 3].map((num) => (
-              <span
-                key={num}
-                className={`strike w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
-                  gameState.teamLeft.strikes >= num ? 'bg-game-red animate-strike' : 'bg-secondary/50'
-                }`}
-              >
-                ❌
-              </span>
-            ))}
-          </div>
+          {gameState.teamLeft.strikes > 0 && (
+            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+              {[1, 2, 3].map((num) =>
+                gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
+              )}
+            </div>
+          )}
         </div>
 
-        {/* PAPAN JAWABAN */}
-        <div className="board-wrapper flex flex-col items-center space-y-6">
-          <div className="board bg-gradient-card p-8 rounded-3xl shadow-card">
-            <ul className="answers space-y-3">
+        {/* PAPAN JAWABAN REGULAR */}
+        <div className="board-wrapper flex flex-col items-center gap-5">
+          <div className="n min-w-[600px]">
+            <ul className="answers list-none p-0 m-0">
               {displayAnswers.map((answer, index) => (
-                <li key={index} className="answer-wrap">
-                  <div className={`answer-row flex items-center justify-between px-8 py-4 rounded-xl transition-all duration-500 ${
-                    answer.revealed
-                      ? 'bg-gradient-gold text-primary-foreground animate-flip'
-                      : 'bg-game-primary text-white'
-                  } shadow-lg`} style={{ minWidth: '500px' }}>
-                    <div className="number text-3xl font-bold w-12 text-center">
+                <li key={index} className="answer-wrap bg-white p-0.5 rounded-[20px] my-2 shadow-md">
+                  <div className="answer-row grid grid-cols-[49px_1fr_90px] gap-px">
+                    <div className="number bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px]">
                       {index + 1}
                     </div>
-                    <div className="text text-2xl font-bold flex-1 text-center">
+                    <div className={`text bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px] transition-all duration-500 ${
+                      answer.revealed ? 'bg-yellow-400 text-blue-900' : ''
+                    }`}>
                       {answer.revealed ? answer.text : '__________'}
                     </div>
-                    <div className="points text-3xl font-bold w-16 text-center">
+                    <div className={`points bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px] transition-all duration-500 ${
+                      answer.revealed ? 'bg-yellow-400 text-blue-900' : ''
+                    }`}>
                       {answer.revealed ? answer.points : '__'}
                     </div>
                   </div>
@@ -134,38 +131,33 @@ export const DisplayView = () => {
           </div>
 
           {/* TOTAL SCORE DI LUAR BOARD */}
-          <div className="total-box bg-gradient-gold p-6 rounded-2xl shadow-gold">
-            <div className="total-label text-xl font-bold text-primary-foreground mb-2 text-center">TOTAL</div>
-            <div className="total-score text-4xl font-bold text-primary-foreground text-center">
+          <div className="total-box flex justify-between items-center rounded-full p-1.5 text-xl font-bold w-full max-w-[250px] ml-auto mr-5 shadow-lg bg-orange-500 text-white">
+            <div className="total-label text-3xl font-bold ml-5">TOTAL</div>
+            <div className="total-score px-3.75 py-1.25 rounded-[30px] text-3xl font-bold bg-white text-orange-500">
               {gameState.totalScore}
             </div>
           </div>
         </div>
 
         {/* TIM KANAN */}
-        <div className="team-wrapper flex flex-col items-center space-y-6">
-          <div className="team-name bg-gradient-gold px-8 py-4 rounded-2xl shadow-gold text-3xl font-bold text-primary-foreground text-center">
+        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
             {gameState.teamRight.name}
           </div>
-          
-          <div className="team-box bg-gradient-card p-6 rounded-2xl shadow-card">
-            <div className="team-score text-6xl font-bold text-primary text-center">
+
+          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
+            <div className="team-score text-[42px] font-bold text-white">
               {gameState.teamRight.score}
             </div>
           </div>
 
-          <div className="strikes flex space-x-2">
-            {[1, 2, 3].map((num) => (
-              <span
-                key={num}
-                className={`strike w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
-                  gameState.teamRight.strikes >= num ? 'bg-game-red animate-strike' : 'bg-secondary/50'
-                }`}
-              >
-                ❌
-              </span>
-            ))}
-          </div>
+          {gameState.teamRight.strikes > 0 && (
+            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+              {[1, 2, 3].map((num) =>
+                gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
+              )}
+            </div>
+          )}
         </div>
 
       </div>

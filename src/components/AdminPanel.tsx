@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ interface Answer {
 
 interface GameState {
   question: string;
-  answers: { [round: number]: Answer[] };
+  answers: { [round: number]: (Answer | null)[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
@@ -30,26 +30,19 @@ interface GameState {
 
 export const AdminPanel = () => {
   const { toast } = useToast();
+  const newAnswerTextRef = useRef<HTMLInputElement>(null);
   const [gameState, setGameState] = useState<GameState>({
-    question: "Sebutkan makanan yang sering dibawa saat piknik!",
+    question: "",
     answers: {
-      1: [
-        { text: "NASI BUNGKUS", points: 40, revealed: false },
-        { text: "SANDWICH", points: 25, revealed: false },
-        { text: "MIE INSTAN", points: 15, revealed: false },
-        { text: "BUAH-BUAHAN", points: 10, revealed: false },
-        { text: "KUE", points: 5, revealed: false },
-        { text: "MINUMAN KEMASAN", points: 3, revealed: false },
-        { text: "KERUPUK", points: 2, revealed: false },
-      ],
+      1: [],
       2: [],
       3: [],
       4: [],
       5: [] // Bonus round
     },
-    teamLeft: { name: "ASE", score: 30, strikes: 1 },
-    teamRight: { name: "AIS", score: 230, strikes: 3 },
-    totalScore: 120,
+    teamLeft: { name: "TIM A", score: 0, strikes: 0 },
+    teamRight: { name: "TIM B", score: 0, strikes: 0 },
+    totalScore: 0,
     round: 1,
     currentPlayingTeam: null
   });
@@ -58,11 +51,57 @@ export const AdminPanel = () => {
 
   const [newAnswer, setNewAnswer] = useState({ text: "", points: 0 });
 
+  const [targetIndex, setTargetIndex] = useState<number | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"game" | "answers" | "teams">("game");
+
   // Load saved state
   useEffect(() => {
-    const saved = localStorage.getItem('family100-game-state');
-    if (saved) {
-      setGameState(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('family100-game-state');
+      if (saved) {
+        let parsedState = JSON.parse(saved);
+
+        // Ensure answers is an object
+        if (!parsedState.answers || typeof parsedState.answers !== 'object') {
+          parsedState.answers = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+        }
+
+        // Ensure answers structure is complete and arrays
+        parsedState.answers = {
+          1: Array.isArray(parsedState.answers[1]) ? parsedState.answers[1] : [],
+          2: Array.isArray(parsedState.answers[2]) ? parsedState.answers[2] : [],
+          3: Array.isArray(parsedState.answers[3]) ? parsedState.answers[3] : [],
+          4: Array.isArray(parsedState.answers[4]) ? parsedState.answers[4] : [],
+          5: Array.isArray(parsedState.answers[5]) ? parsedState.answers[5] : []
+        };
+
+        // Ensure round is valid
+        if (!parsedState.round || parsedState.round < 1 || parsedState.round > 5) {
+          parsedState.round = 1;
+        }
+
+        // Ensure other properties exist
+        parsedState.question = parsedState.question || "";
+        parsedState.teamLeft = parsedState.teamLeft || { name: "TIM A", score: 0, strikes: 0 };
+        parsedState.teamRight = parsedState.teamRight || { name: "TIM B", score: 0, strikes: 0 };
+        parsedState.totalScore = parsedState.totalScore || 0;
+        parsedState.currentPlayingTeam = parsedState.currentPlayingTeam || null;
+
+        setGameState(parsedState);
+      }
+    } catch (error) {
+      console.error('Error loading game state:', error);
+      // Reset to default state if loading fails
+      setGameState({
+        question: "",
+        answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
+        teamLeft: { name: "TIM A", score: 0, strikes: 0 },
+        teamRight: { name: "TIM B", score: 0, strikes: 0 },
+        totalScore: 0,
+        round: 1,
+        currentPlayingTeam: null
+      });
     }
   }, []);
 
@@ -82,27 +121,56 @@ export const AdminPanel = () => {
   };
 
   const addAnswer = (round: number = selectedRoundForAnswers) => {
-    if (newAnswer.text.trim() && newAnswer.points > 0) {
+    if (newAnswer.text.trim()) {
       const updatedAnswers = { ...gameState.answers };
-      updatedAnswers[round] = [...(updatedAnswers[round] || []), { ...newAnswer, revealed: false }];
+      let arr = [...(updatedAnswers[round] || [])];
+      if (targetIndex !== null) {
+        // Pad with null if necessary
+        while (arr.length <= targetIndex) {
+          arr.push(null);
+        }
+        arr[targetIndex] = { ...newAnswer, revealed: false };
+        toast({ title: `Jawaban ditambahkan di posisi ${targetIndex + 1} babak ${round}!` });
+      } else {
+        // Find first empty slot
+        const firstEmptyIndex = arr.findIndex(a => a === null);
+        if (firstEmptyIndex !== -1) {
+          arr[firstEmptyIndex] = { ...newAnswer, revealed: false };
+          toast({ title: `Jawaban ditambahkan di posisi ${firstEmptyIndex + 1} babak ${round}!` });
+        } else {
+          // Append if no empty slots
+          arr.push({ ...newAnswer, revealed: false });
+          toast({ title: `Jawaban ditambahkan ke babak ${round}!` });
+        }
+      }
+      updatedAnswers[round] = arr;
       saveGameState({ ...gameState, answers: updatedAnswers });
       setNewAnswer({ text: "", points: 0 });
-      toast({ title: `Jawaban ditambahkan ke babak ${round}!` });
+      setTargetIndex(null);
+    } else {
+      toast({ title: "Masukkan jawaban terlebih dahulu!" });
     }
   };
 
   const updateAnswer = (index: number, field: keyof Answer, value: string | number | boolean, round: number = selectedRoundForAnswers) => {
     const updatedAnswers = { ...gameState.answers };
-    updatedAnswers[round] = [...(updatedAnswers[round] || [])];
-    updatedAnswers[round][index] = { ...updatedAnswers[round][index], [field]: value };
-    saveGameState({ ...gameState, answers: updatedAnswers });
+    let arr = [...(updatedAnswers[round] || [])];
+    if (arr[index]) {
+      arr[index] = { ...arr[index], [field]: value } as Answer;
+      updatedAnswers[round] = arr;
+      saveGameState({ ...gameState, answers: updatedAnswers });
+    }
   };
 
   const deleteAnswer = (index: number, round: number = selectedRoundForAnswers) => {
     const updatedAnswers = { ...gameState.answers };
-    updatedAnswers[round] = (updatedAnswers[round] || []).filter((_, i) => i !== index);
-    saveGameState({ ...gameState, answers: updatedAnswers });
-    toast({ title: `Jawaban dihapus dari babak ${round}!` });
+    let arr = [...(updatedAnswers[round] || [])];
+    if (index < arr.length) {
+      arr[index] = null;
+      updatedAnswers[round] = arr;
+      saveGameState({ ...gameState, answers: updatedAnswers });
+      toast({ title: `Jawaban dihapus dari posisi ${index + 1} babak ${round}!` });
+    }
   };
 
   const revealAnswer = (index: number, round: number = gameState.round) => {
@@ -123,7 +191,7 @@ export const AdminPanel = () => {
   const updateTotalScore = () => {
     const currentRoundAnswers = gameState.answers[gameState.round] || [];
     const total = currentRoundAnswers
-      .filter(answer => answer.revealed)
+      .filter((answer): answer is Answer => answer !== null && answer.revealed)
       .reduce((sum, answer) => sum + answer.points, 0);
     saveGameState({ ...gameState, totalScore: total });
   };
@@ -151,6 +219,8 @@ export const AdminPanel = () => {
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const selectedRoundAnswers = gameState.answers[selectedRoundForAnswers] || [];
   const answerCount = getAnswerCount(gameState.round);
+  const filledCurrent = currentRoundAnswers.filter(a => a !== null).length;
+  const filledSelected = selectedRoundAnswers.filter(a => a !== null).length;
   const displayAnswers = currentRoundAnswers.slice(0, answerCount);
 
   const getRoundName = (round: number) => {
@@ -225,7 +295,7 @@ export const AdminPanel = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="game" className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "game" | "answers" | "teams")} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="game">Game Control</TabsTrigger>
             <TabsTrigger value="answers">Kelola Jawaban</TabsTrigger>
@@ -375,33 +445,168 @@ export const AdminPanel = () => {
             {/* Quick Answer Reveal */}
             <Card>
               <CardHeader>
-                <CardTitle>{getRoundName(gameState.round)} - Jawaban ({displayAnswers.length} dari {answerCount})</CardTitle>
+                <CardTitle>{getRoundName(gameState.round)} - Jawaban ({filledCurrent} dari {answerCount})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {displayAnswers.map((answer, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center justify-between p-4 rounded-lg border ${
-                        answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="font-bold">{index + 1}.</span>
-                        <span className={answer.revealed ? 'font-bold' : ''}>
-                          {answer.text} ({answer.points})
-                        </span>
+                {gameState.round === 5 ? (
+                  <div className="grid grid-cols-2 gap-8">
+                    {/* Left Column - Orang Pertama (1-5) */}
+                    <div>
+                      <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Pertama</h3>
+                      <div className="space-y-4">
+                        {new Array(5).fill(null).map((_, index) => {
+                          const answer = currentRoundAnswers[index];
+                          if (answer) {
+                            return (
+                              <div
+                                key={index}
+                                className={`flex items-center justify-between p-4 rounded-lg border ${
+                                  answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{index + 1}.</span>
+                                  <span className={answer.revealed ? 'font-bold' : ''}>
+                                    {answer.text} ({answer.points})
+                                  </span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => answer.revealed ? hideAnswer(index, gameState.round) : revealAnswer(index, gameState.round)}
+                                  variant={answer.revealed ? "destructive" : "default"}
+                                >
+                                  {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
+                                </Button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{index + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => toast({ title: `Tidak ada jawaban di posisi ${index + 1}` })}
+                                >
+                                  Ungkap
+                                </Button>
+                              </div>
+                            );
+                          }
+                        })}
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => answer.revealed ? hideAnswer(index, gameState.round) : revealAnswer(index, gameState.round)}
-                        variant={answer.revealed ? "destructive" : "default"}
-                      >
-                        {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
-                      </Button>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Right Column - Orang Kedua (6-10) */}
+                    <div>
+                      <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Kedua</h3>
+                      <div className="space-y-4">
+                        {new Array(5).fill(null).map((_, index) => {
+                          const actualIndex = index + 5;
+                          const answer = currentRoundAnswers[actualIndex];
+                          if (answer) {
+                            return (
+                              <div
+                                key={actualIndex}
+                                className={`flex items-center justify-between p-4 rounded-lg border ${
+                                  answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{actualIndex + 1}.</span>
+                                  <span className={answer.revealed ? 'font-bold' : ''}>
+                                    {answer.text} ({answer.points})
+                                  </span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => answer.revealed ? hideAnswer(actualIndex, gameState.round) : revealAnswer(actualIndex, gameState.round)}
+                                  variant={answer.revealed ? "destructive" : "default"}
+                                >
+                                  {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
+                                </Button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div
+                                key={actualIndex}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{actualIndex + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => toast({ title: `Tidak ada jawaban di posisi ${actualIndex + 1}` })}
+                                >
+                                  Ungkap
+                                </Button>
+                              </div>
+                            );
+                          }
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {new Array(answerCount).fill(null).map((_, index) => {
+                      const answer = currentRoundAnswers[index];
+                      if (answer) {
+                        return (
+                          <div
+                            key={index}
+                            className={`flex items-center justify-between p-4 rounded-lg border ${
+                              answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="font-bold">{index + 1}.</span>
+                              <span className={answer.revealed ? 'font-bold' : ''}>
+                                {answer.text} ({answer.points})
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => answer.revealed ? hideAnswer(index, gameState.round) : revealAnswer(index, gameState.round)}
+                              variant={answer.revealed ? "destructive" : "default"}
+                            >
+                              {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
+                            </Button>
+                          </div>
+                        );
+                          } else {
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{index + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => toast({ title: `Tidak ada jawaban di posisi ${index + 1}` })}
+                                >
+                                  Ungkap
+                                </Button>
+                              </div>
+                            );
+                          }
+                    })}
+                  </div>
+                )}
                 {gameState.round === 5 && (
                   <div className="mt-4 p-4 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">
@@ -445,6 +650,7 @@ export const AdminPanel = () => {
                     <Label htmlFor="newAnswerText">Jawaban</Label>
                     <Input
                       id="newAnswerText"
+                      ref={newAnswerTextRef}
                       value={newAnswer.text}
                       onChange={(e) => setNewAnswer({ ...newAnswer, text: e.target.value })}
                       placeholder="Masukkan jawaban..."
@@ -455,7 +661,7 @@ export const AdminPanel = () => {
                     <Input
                       id="newAnswerPoints"
                       type="number"
-                      value={newAnswer.points}
+                      value={newAnswer.points.toString()}
                       onChange={(e) => setNewAnswer({ ...newAnswer, points: parseInt(e.target.value) || 0 })}
                       placeholder="Poin"
                     />
@@ -464,55 +670,217 @@ export const AdminPanel = () => {
                     <Button onClick={() => addAnswer(selectedRoundForAnswers)}>Tambah</Button>
                   </div>
                 </div>
+
                 <div className="mt-4 text-sm text-muted-foreground">
                   Max jawaban: {getAnswerCount(selectedRoundForAnswers)} | 
-                  Jawaban saat ini: {selectedRoundAnswers.length}
+                  Jawaban saat ini: {filledSelected}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Daftar Jawaban - {getRoundName(selectedRoundForAnswers)}</CardTitle>
+                <CardTitle>Daftar Jawaban - {getRoundName(selectedRoundForAnswers)} ({filledSelected} dari {getAnswerCount(selectedRoundForAnswers)})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {selectedRoundAnswers.map((answer, index) => (
-                    <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <span className="font-bold w-8">{index + 1}.</span>
-                      <Input
-                        value={answer.text}
-                        onChange={(e) => updateAnswer(index, 'text', e.target.value, selectedRoundForAnswers)}
-                        className="flex-1"
-                      />
-                      <Input
-                        type="number"
-                        value={answer.points}
-                        onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
-                        className="w-20"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
-                        variant={answer.revealed ? "destructive" : "default"}
-                      >
-                        {answer.revealed ? 'Hide' : 'Show'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
-                      >
-                        Hapus
-                      </Button>
+                {selectedRoundForAnswers === 5 ? (
+                  <div className="grid grid-cols-2 gap-8">
+                    {/* Left Column - Orang Pertama (1-5) */}
+                    <div>
+                      <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Pertama</h3>
+                      <div className="space-y-4">
+                        {new Array(5).fill(null).map((_, index) => {
+                          const answer = selectedRoundAnswers[index];
+                          if (answer) {
+                            return (
+                              <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
+                                <span className="font-bold w-8">{index + 1}.</span>
+                                <Input
+                                  value={answer.text}
+                                  onChange={(e) => updateAnswer(index, 'text', e.target.value, selectedRoundForAnswers)}
+                                  className="flex-1"
+                                />
+                                <Input
+                                  type="number"
+                                  value={answer.points.toString()}
+                                  onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
+                                  className="w-20"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
+                                  variant={answer.revealed ? "destructive" : "default"}
+                                >
+                                  {answer.revealed ? 'Hide' : 'Show'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
+                                >
+                                  Hapus
+                                </Button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{index + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setTargetIndex(index);
+                                    setNewAnswer({ text: "", points: 0 });
+                                    toast({ title: `Siap menambahkan jawaban di posisi ${index + 1}` });
+                                    newAnswerTextRef.current?.focus();
+                                  }}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            );
+                          }
+                        })}
+                      </div>
                     </div>
-                  ))}
-                  {selectedRoundAnswers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">
-                      Belum ada jawaban untuk {getRoundName(selectedRoundForAnswers)}
-                    </p>
-                  )}
-                </div>
+
+                    {/* Right Column - Orang Kedua (6-10) */}
+                    <div>
+                      <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Kedua</h3>
+                      <div className="space-y-4">
+                        {new Array(5).fill(null).map((_, index) => {
+                          const actualIndex = index + 5;
+                          const answer = selectedRoundAnswers[actualIndex];
+                          if (answer) {
+                            return (
+                              <div key={actualIndex} className="flex items-center gap-4 p-4 border rounded-lg">
+                                <span className="font-bold w-8">{actualIndex + 1}.</span>
+                                <Input
+                                  value={answer.text}
+                                  onChange={(e) => updateAnswer(actualIndex, 'text', e.target.value, selectedRoundForAnswers)}
+                                  className="flex-1"
+                                />
+                                <Input
+                                  type="number"
+                                  value={answer.points.toString()}
+                                  onChange={(e) => updateAnswer(actualIndex, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
+                                  className="w-20"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateAnswer(actualIndex, 'revealed', !answer.revealed, selectedRoundForAnswers)}
+                                  variant={answer.revealed ? "destructive" : "default"}
+                                >
+                                  {answer.revealed ? 'Hide' : 'Show'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteAnswer(actualIndex, selectedRoundForAnswers)}
+                                >
+                                  Hapus
+                                </Button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div
+                                key={actualIndex}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{actualIndex + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setTargetIndex(actualIndex);
+                                    setNewAnswer({ text: "", points: 0 });
+                                    toast({ title: `Siap menambahkan jawaban di posisi ${actualIndex + 1}` });
+                                    newAnswerTextRef.current?.focus();
+                                  }}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            );
+                          }
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                        {new Array(getAnswerCount(selectedRoundForAnswers)).fill(null).map((_, index) => {
+                          const answer = selectedRoundAnswers[index];
+                          if (answer) {
+                            return (
+                              <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
+                                <span className="font-bold w-8">{index + 1}.</span>
+                                <Input
+                                  value={answer.text}
+                                  onChange={(e) => updateAnswer(index, 'text', e.target.value, selectedRoundForAnswers)}
+                                  className="flex-1"
+                                />
+                                <Input
+                                  type="number"
+                                  value={answer.points.toString()}
+                                  onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
+                                  className="w-20"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateAnswer(index, 'revealed', !answer.revealed, selectedRoundForAnswers)}
+                                  variant={answer.revealed ? "destructive" : "default"}
+                                >
+                                  {answer.revealed ? 'Hide' : 'Show'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
+                                >
+                                  Hapus
+                                </Button>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="font-bold">{index + 1}.</span>
+                                  <span>Jawaban belum ditambahkan</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setTargetIndex(index);
+                                    setNewAnswer({ text: "", points: 0 });
+                                    toast({ title: `Siap menambahkan jawaban di posisi ${index + 1}` });
+                                    newAnswerTextRef.current?.focus();
+                                  }}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            );
+                          }
+                        })}
+                  </div>
+                )}
                 {selectedRoundForAnswers === 5 && (
                   <div className="mt-4 p-4 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">

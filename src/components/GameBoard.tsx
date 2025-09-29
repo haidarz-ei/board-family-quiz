@@ -14,36 +14,9 @@ interface Question {
   answers: Answer[];
 }
 
-const SAMPLE_QUESTIONS: Question[] = [
-  {
-    question: "Sebutkan makanan yang sering dibawa saat piknik!",
-    answers: [
-      { text: "Nasi Bungkus", points: 40, revealed: false },
-      { text: "Sandwich", points: 25, revealed: false },
-      { text: "Mie Instan", points: 15, revealed: false },
-      { text: "Buah-buahan", points: 10, revealed: false },
-      { text: "Kue", points: 5, revealed: false },
-      { text: "Minuman Kemasan", points: 3, revealed: false },
-      { text: "Kerupuk", points: 2, revealed: false },
-    ]
-  },
-  {
-    question: "Hal yang dilakukan orang saat menunggu di bandara!",
-    answers: [
-      { text: "Main HP", points: 35, revealed: false },
-      { text: "Makan", points: 20, revealed: false },
-      { text: "Tidur", points: 18, revealed: false },
-      { text: "Baca Buku", points: 12, revealed: false },
-      { text: "Jalan-jalan", points: 8, revealed: false },
-      { text: "Foto-foto", points: 4, revealed: false },
-      { text: "Belanja", points: 3, revealed: false },
-    ]
-  }
-];
-
 export const GameBoard = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [question, setQuestion] = useState<Question>(SAMPLE_QUESTIONS[0]);
+  const [question, setQuestion] = useState<Question>({ question: "", answers: [] });
   const [score, setScore] = useState(0);
   const [strikes, setStrikes] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -69,25 +42,11 @@ export const GameBoard = () => {
     setTimeLeft(30);
     setGameOver(false);
     setCurrentQuestion(0);
-    setQuestion({
-      ...SAMPLE_QUESTIONS[0],
-      answers: SAMPLE_QUESTIONS[0].answers.map(a => ({ ...a, revealed: false }))
-    });
+    setQuestion({ question: "Tidak ada pertanyaan", answers: [] });
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < SAMPLE_QUESTIONS.length - 1) {
-      const nextQ = currentQuestion + 1;
-      setCurrentQuestion(nextQ);
-      setQuestion({
-        ...SAMPLE_QUESTIONS[nextQ],
-        answers: SAMPLE_QUESTIONS[nextQ].answers.map(a => ({ ...a, revealed: false }))
-      });
-      setTimeLeft(30);
-      setUserAnswer("");
-    } else {
-      endGame();
-    }
+    endGame();
   };
 
   const handleStrike = () => {
@@ -174,7 +133,7 @@ export const GameBoard = () => {
                     strikes >= num ? 'bg-game-red animate-strike' : 'bg-secondary'
                   }`}
                 >
-                  X
+                  {strikes >= num ? 'X' : ''}
                 </div>
               ))}
             </div>
