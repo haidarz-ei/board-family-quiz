@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BonusDisplayView } from "./BonusDisplayView";
 import { useRevealSound } from "../hooks/useRevealSound";
+import { database, ref, onValue } from "../firebase";
 
 interface Team {
   name: string;
@@ -16,7 +17,7 @@ interface Answer {
 
 interface GameState {
   question: string;
-  answers: { [round: number]: Answer[] };
+  answers: { [round: number]: (Answer | null)[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
@@ -28,6 +29,7 @@ export const DisplayView = () => {
   const { playRevealSound, playWrongAnswerSound } = useRevealSound();
   const prevRevealedRef = useRef<string[]>([]);
   const prevStrikesRef = useRef({ left: 0, right: 0 });
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     question: "",
     answers: {
@@ -44,114 +46,94 @@ export const DisplayView = () => {
     currentPlayingTeam: null
   });
 
-  // Listen for updates from admin panel
+  // Listen for updates from Firebase real-time database and localStorage
   useEffect(() => {
+    const handleStateUpdate = (newState: GameState) => {
+      // Check for newly revealed answers
+      const currentAnswers = newState.answers[newState.round] || [];
+      const validAnswers = currentAnswers.filter((answer): answer is Answer => answer !== null);
+      const currentRevealed = validAnswers
+        .filter((answer: Answer) => answer.revealed)
+        .map((answer: Answer) => `${newState.round}-${answer.text}`);
+
+      const newRevealed = currentRevealed.filter(
+        (id: string) => !prevRevealedRef.current.includes(id)
+      );
+
+      // Play sound for each newly revealed answer
+      for (const revealedId of newRevealed) {
+        const answer = validAnswers.find((a: Answer) =>
+          a.revealed && `${newState.round}-${a.text}` === revealedId
+        );
+        if (answer) {
+          playRevealSound(answer.points, validAnswers);
+        }
+      }
+
+      // Check for strikes increase and play wrong answer sound
+      const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
+      const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
+
+      if (leftStrikesIncreased || rightStrikesIncreased) {
+        playWrongAnswerSound();
+      }
+
+      prevRevealedRef.current = currentRevealed;
+      prevStrikesRef.current = {
+        left: newState.teamLeft.strikes,
+        right: newState.teamRight.strikes
+      };
+      setGameState(newState);
+    };
+
+    // Firebase listener
+    console.log('DisplayView: Setting up Firebase listener');
+    const gameStateRef = ref(database, 'family100-game-state');
+    const unsubscribeFirebase = onValue(gameStateRef, (snapshot) => {
+      const newState = snapshot.val();
+      console.log('DisplayView: Firebase snapshot received:', newState);
+      if (newState) {
+        console.log('DisplayView: Processing new state from Firebase');
+        handleStateUpdate(newState);
+      } else {
+        console.log('DisplayView: No data in Firebase snapshot');
+      }
+    });
+
+    // localStorage listener
     const handleStorageChange = () => {
       const stored = localStorage.getItem('family100-game-state');
-      console.log('DisplayView: Storage event triggered, stored data:', stored);
       if (stored) {
         const newState = JSON.parse(stored);
-        console.log('DisplayView: Parsed state:', newState);
-        console.log('DisplayView: Current round:', newState.round);
-        console.log('DisplayView: Answers for current round:', newState.answers[newState.round]);
-        
-        // Check for newly revealed answers
-        const currentAnswers = newState.answers[newState.round] || [];
-        const currentRevealed = currentAnswers
-          .filter((answer: Answer) => answer.revealed)
-          .map((answer: Answer) => `${newState.round}-${answer.text}`);
-        
-        console.log('DisplayView: Current revealed answers:', currentRevealed);
-        console.log('DisplayView: Previous revealed answers:', prevRevealedRef.current);
-        
-        const newRevealed = currentRevealed.filter(
-          (id: string) => !prevRevealedRef.current.includes(id)
-        );
-        
-        console.log('DisplayView: New revealed answers:', newRevealed);
-        
-        // Play sound for each newly revealed answer
-        for (const revealedId of newRevealed) {
-          const answer = currentAnswers.find((a: Answer) => 
-            a.revealed && `${newState.round}-${a.text}` === revealedId
-          );
-          if (answer) {
-            console.log('DisplayView: Playing sound for answer:', answer);
-            playRevealSound(answer.points, currentAnswers);
-          }
-        }
-        
-        // Check for strikes increase and play wrong answer sound
-        const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
-        const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
-        
-        if (leftStrikesIncreased || rightStrikesIncreased) {
-          console.log('DisplayView: Strikes increased, playing wrong answer sound');
-          playWrongAnswerSound();
-        }
-        
-        prevRevealedRef.current = currentRevealed;
-        prevStrikesRef.current = {
-          left: newState.teamLeft.strikes,
-          right: newState.teamRight.strikes
+        handleStateUpdate(newState);
+      } else {
+        // Set empty default state if no stored state
+        const defaultState = {
+          question: "",
+          answers: {
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+            5: []
+          },
+          teamLeft: { name: "TIM A", score: 0, strikes: 0 },
+          teamRight: { name: "TIM B", score: 0, strikes: 0 },
+          totalScore: 0,
+          round: 1,
+          currentPlayingTeam: null
         };
-        setGameState(newState);
+        localStorage.setItem('family100-game-state', JSON.stringify(defaultState));
+        setGameState(defaultState);
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     handleStorageChange(); // Load initial state
 
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [playRevealSound, playWrongAnswerSound]);
-
-  // Listen via BroadcastChannel (same-tab SPA updates)
-  useEffect(() => {
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel('family100-game');
-      const onMessage = (event: MessageEvent) => {
-        const data: any = (event as any).data;
-        if (data?.type === 'state' && data.payload) {
-          const newState = data.payload as GameState;
-          // Check for newly revealed answers
-          const currentAnswers = newState.answers[newState.round] || [];
-          const currentRevealed = currentAnswers
-            .filter((answer: Answer) => answer?.revealed)
-            .map((answer: Answer) => `${newState.round}-${answer.text}`);
-
-          const newRevealed = currentRevealed.filter(
-            (id: string) => !prevRevealedRef.current.includes(id)
-          );
-
-          for (const revealedId of newRevealed) {
-            const answer = currentAnswers.find((a: Answer) => a?.revealed && `${newState.round}-${a.text}` === revealedId);
-            if (answer) {
-              playRevealSound(answer.points, currentAnswers);
-            }
-          }
-
-          const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
-          const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
-          if (leftStrikesIncreased || rightStrikesIncreased) {
-            playWrongAnswerSound();
-          }
-
-          prevRevealedRef.current = currentRevealed;
-          prevStrikesRef.current = {
-            left: newState.teamLeft.strikes,
-            right: newState.teamRight.strikes
-          };
-
-          setGameState(newState);
-        }
-      };
-      bc.addEventListener('message', onMessage as any);
-    } catch (e) {
-      console.warn('DisplayView: BroadcastChannel not supported');
-    }
     return () => {
-      try { bc?.close(); } catch {}
+      unsubscribeFirebase();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [playRevealSound, playWrongAnswerSound]);
 
@@ -180,29 +162,52 @@ export const DisplayView = () => {
     return <BonusDisplayView gameState={gameState} />;
   }
 
+  const enableAudio = () => {
+    if (!audioEnabled) {
+      // Create and play a silent audio to unlock audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const buffer = audioContext.createBuffer(1, 1, 22050);
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      source.start();
+      setAudioEnabled(true);
+      console.log('DisplayView: Audio enabled by user interaction');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans relative">
+    <div className="min-h-screen bg-gray-900 text-white overflow-x-hidden font-sans relative" onClick={enableAudio}>
+      {!audioEnabled && (
+        <div className="fixed top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded-lg shadow-lg z-50 font-bold">
+          Klik di sini untuk enable suara 🎵
+        </div>
+      )}
       <video autoPlay muted loop id="bgVideo" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-auto z-0">
         <source src="/video/2.mp4" type="video/mp4" />
         Browser Anda tidak mendukung mp4.
       </video>
 
-      <div className="game-container relative z-10 flex items-start justify-center p-10 gap-32 flex-nowrap text-white">
+      <div className="w-full text-center py-4">
+        <h1 className="text-4xl font-bold text-white">{gameState.question}</h1>
+      </div>
+
+      <div className="game-container relative z-10 flex items-start justify-center p-4 gap-8 flex-nowrap text-white">
 
         {/* TIM KIRI */}
-        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
-          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
+        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '50px'}}>
+          <div className="team-name inline-block font-semibold text-2xl px-4 py-1 rounded-[20px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
             {gameState.teamLeft.name}
           </div>
 
-          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
-            <div className="team-score text-[42px] font-bold text-white">
+          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[100px] h-[80px] flex items-center justify-center shadow-lg">
+            <div className="team-score text-[32px] font-bold text-white">
               {gameState.teamLeft.score}
             </div>
           </div>
 
           {gameState.teamLeft.strikes > 0 && (
-            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+            <div className="strikes mt-2.5 flex flex-col gap-2 text-4xl text-red-500">
               {[1, 2, 3].map((num) =>
                 gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
               )}
@@ -212,20 +217,20 @@ export const DisplayView = () => {
 
         {/* PAPAN JAWABAN REGULAR */}
         <div className="board-wrapper flex flex-col items-center gap-5">
-          <div className="n min-w-[600px]">
+          <div className="min-w-[400px]">
             <ul className="answers list-none p-0 m-0">
               {displayAnswers.map((answer, index) => (
-                <li key={index} className="answer-wrap bg-white p-0.5 rounded-[20px] my-2 shadow-md">
-                  <div className="answer-row grid grid-cols-[49px_1fr_90px] gap-px">
-                    <div className="number bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px]">
+                <li key={index} className="answer-wrap bg-white p-0.5 rounded-[15px] my-1 shadow-md">
+                  <div className="answer-row grid grid-cols-[40px_1fr_70px] gap-px">
+                    <div className="number bg-[#024694] text-white px-2 py-2 font-bold text-lg text-center rounded-[15px]">
                       {index + 1}
                     </div>
-                    <div className={`text bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px] transition-all duration-500 ${
+                    <div className={`text bg-[#024694] text-white px-2 py-2 font-bold text-lg text-center rounded-[15px] transition-all duration-500 ${
                       answer.revealed ? 'bg-yellow-400 text-blue-900' : ''
                     }`}>
                       {answer.revealed ? answer.text : '__________'}
                     </div>
-                    <div className={`points bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px] transition-all duration-500 ${
+                    <div className={`points bg-[#024694] text-white px-2 py-2 font-bold text-lg text-center rounded-[15px] transition-all duration-500 ${
                       answer.revealed ? 'bg-yellow-400 text-blue-900' : ''
                     }`}>
                       {answer.revealed ? answer.points : '__'}
@@ -237,28 +242,28 @@ export const DisplayView = () => {
           </div>
 
           {/* TOTAL SCORE DI LUAR BOARD */}
-          <div className="total-box flex justify-between items-center rounded-full p-1.5 text-xl font-bold w-full max-w-[250px] ml-auto mr-5 shadow-lg bg-orange-500 text-white">
-            <div className="total-label text-3xl font-bold ml-5">TOTAL</div>
-            <div className="total-score px-3.75 py-1.25 rounded-[30px] text-3xl font-bold bg-white text-orange-500">
+          <div className="total-box flex justify-between items-center rounded-full p-1 text-lg font-bold w-full max-w-[200px] ml-auto mr-5 shadow-lg bg-orange-500 text-white">
+            <div className="total-label text-2xl font-bold ml-3">TOTAL</div>
+            <div className="total-score px-2 py-1 rounded-[20px] text-2xl font-bold bg-white text-orange-500">
               {gameState.totalScore}
             </div>
           </div>
         </div>
 
         {/* TIM KANAN */}
-        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
-          <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
+        <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '50px'}}>
+          <div className="team-name inline-block font-semibold text-2xl px-4 py-1 rounded-[20px] mb-1 font-poppins shadow-lg bg-white text-gray-800">
             {gameState.teamRight.name}
           </div>
 
-          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[140px] h-[110px] flex items-center justify-center shadow-lg">
-            <div className="team-score text-[42px] font-bold text-white">
+          <div className="team-box bg-[#ff6c00] border-4 border-[#ffd500] rounded-[30px] w-[100px] h-[80px] flex items-center justify-center shadow-lg">
+            <div className="team-score text-[32px] font-bold text-white">
               {gameState.teamRight.score}
             </div>
           </div>
 
           {gameState.teamRight.strikes > 0 && (
-            <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
+            <div className="strikes mt-2.5 flex flex-col gap-2 text-4xl text-red-500">
               {[1, 2, 3].map((num) =>
                 gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
               )}

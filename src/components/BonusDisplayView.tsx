@@ -15,7 +15,7 @@ interface Answer {
 
 interface GameState {
   question: string;
-  answers: { [round: number]: Answer[] };
+  answers: { [round: number]: (Answer | null)[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;

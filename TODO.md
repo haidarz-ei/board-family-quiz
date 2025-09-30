@@ -12,3 +12,10 @@
 - [ ] Add sound playback in DisplayView.tsx when answers are revealed: play "regularAnswer" for regular answers, "highestAnswer" for the answer with highest points in the round.
 - [ ] Add sound playback in BonusDisplayView.tsx when answers are revealed: play "regularAnswer" for regular answers, "highestAnswer" for the answer with highest points in the round.
 - [ ] Ensure sound plays only once per reveal action, not repeatedly.
+
+# TODO: Integrate Firebase for real-time synchronization
+
+- [x] Update DisplayView.tsx to listen for Firebase updates instead of localStorage and BroadcastChannel.
+- [x] Replace localStorage and BroadcastChannel listeners with Firebase onValue listener.
+- [x] Ensure AdminPanel.tsx continues to save to both localStorage and Firebase for backward compatibility.
+- [x] Test real-time synchronization between admin panel and display view.
