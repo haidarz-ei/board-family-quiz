@@ -107,13 +107,16 @@ export const AdminPanel = () => {
 
   // Save state to localStorage
   const saveGameState = (newState: GameState) => {
+    console.log('AdminPanel: Saving game state:', newState);
     setGameState(newState);
     localStorage.setItem('family100-game-state', JSON.stringify(newState));
+    console.log('AdminPanel: State saved to localStorage');
     // Trigger storage event for other windows
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'family100-game-state',
       newValue: JSON.stringify(newState)
     }));
+    console.log('AdminPanel: Storage event dispatched');
   };
 
   const updateQuestion = (question: string) => {
@@ -174,7 +177,10 @@ export const AdminPanel = () => {
   };
 
   const revealAnswer = (index: number, round: number = gameState.round) => {
+    console.log('AdminPanel: Revealing answer at index', index, 'for round', round);
+    console.log('AdminPanel: Current gameState before reveal:', gameState);
     updateAnswer(index, 'revealed', true, round);
+    console.log('AdminPanel: Answer revealed, updated state will be saved');
     toast({ title: `Jawaban ${index + 1} diungkap!` });
   };
 

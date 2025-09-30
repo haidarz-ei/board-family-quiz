@@ -48,8 +48,12 @@ export const DisplayView = () => {
   useEffect(() => {
     const handleStorageChange = () => {
       const stored = localStorage.getItem('family100-game-state');
+      console.log('DisplayView: Storage event triggered, stored data:', stored);
       if (stored) {
         const newState = JSON.parse(stored);
+        console.log('DisplayView: Parsed state:', newState);
+        console.log('DisplayView: Current round:', newState.round);
+        console.log('DisplayView: Answers for current round:', newState.answers[newState.round]);
         
         // Check for newly revealed answers
         const currentAnswers = newState.answers[newState.round] || [];
@@ -57,9 +61,14 @@ export const DisplayView = () => {
           .filter((answer: Answer) => answer.revealed)
           .map((answer: Answer) => `${newState.round}-${answer.text}`);
         
+        console.log('DisplayView: Current revealed answers:', currentRevealed);
+        console.log('DisplayView: Previous revealed answers:', prevRevealedRef.current);
+        
         const newRevealed = currentRevealed.filter(
           (id: string) => !prevRevealedRef.current.includes(id)
         );
+        
+        console.log('DisplayView: New revealed answers:', newRevealed);
         
         // Play sound for each newly revealed answer
         for (const revealedId of newRevealed) {
@@ -67,6 +76,7 @@ export const DisplayView = () => {
             a.revealed && `${newState.round}-${a.text}` === revealedId
           );
           if (answer) {
+            console.log('DisplayView: Playing sound for answer:', answer);
             playRevealSound(answer.points, currentAnswers);
           }
         }
@@ -76,6 +86,7 @@ export const DisplayView = () => {
         const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
         
         if (leftStrikesIncreased || rightStrikesIncreased) {
+          console.log('DisplayView: Strikes increased, playing wrong answer sound');
           playWrongAnswerSound();
         }
         
@@ -106,6 +117,10 @@ export const DisplayView = () => {
     const answer = currentRoundAnswers[index];
     return answer || { text: '', points: 0, revealed: false };
   });
+
+  console.log('DisplayView RENDER: currentRoundAnswers:', currentRoundAnswers);
+  console.log('DisplayView RENDER: displayAnswers:', displayAnswers);
+  console.log('DisplayView RENDER: gameState.round:', gameState.round);
 
   const isBonusRound = gameState.round === 5;
 
