@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useRevealSound } from "../hooks/useRevealSound";
 
 interface Team {
   name: string;
@@ -23,12 +24,51 @@ interface GameState {
 }
 
 export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
+  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const prevRevealedRef = useRef<string[]>([]);
+  const prevStrikesRef = useRef({ left: 0, right: 0 });
+  
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = 10; // Fixed for bonus round
   const displayAnswers = Array.from({ length: answerCount }, (_, index) => {
     const answer = currentRoundAnswers[index];
     return answer || { text: '', points: 0, revealed: false };
   });
+
+  // Check for newly revealed answers and strikes
+  useEffect(() => {
+    const currentRevealed = currentRoundAnswers
+      .filter((answer: Answer) => answer.revealed)
+      .map((answer: Answer) => `${gameState.round}-${answer.text}`);
+    
+    const newRevealed = currentRevealed.filter(
+      (id: string) => !prevRevealedRef.current.includes(id)
+    );
+    
+    // Play sound for each newly revealed answer
+    for (const revealedId of newRevealed) {
+      const answer = currentRoundAnswers.find((a: Answer) => 
+        a.revealed && `${gameState.round}-${a.text}` === revealedId
+      );
+      if (answer) {
+        playRevealSound(answer.points, currentRoundAnswers);
+      }
+    }
+    
+    // Check for strikes increase and play wrong answer sound
+    const leftStrikesIncreased = gameState.teamLeft.strikes > prevStrikesRef.current.left;
+    const rightStrikesIncreased = gameState.teamRight.strikes > prevStrikesRef.current.right;
+    
+    if (leftStrikesIncreased || rightStrikesIncreased) {
+      playWrongAnswerSound();
+    }
+    
+    prevRevealedRef.current = currentRevealed;
+    prevStrikesRef.current = {
+      left: gameState.teamLeft.strikes,
+      right: gameState.teamRight.strikes
+    };
+  }, [gameState.answers, gameState.round, gameState.teamLeft.strikes, gameState.teamRight.strikes, currentRoundAnswers, playRevealSound, playWrongAnswerSound]);
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans relative">

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BonusDisplayView } from "./BonusDisplayView";
+import { useRevealSound } from "../hooks/useRevealSound";
 
 interface Team {
   name: string;
@@ -24,6 +25,9 @@ interface GameState {
 }
 
 export const DisplayView = () => {
+  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const prevRevealedRef = useRef<string[]>([]);
+  const prevStrikesRef = useRef({ left: 0, right: 0 });
   const [gameState, setGameState] = useState<GameState>({
     question: "",
     answers: {
@@ -45,7 +49,42 @@ export const DisplayView = () => {
     const handleStorageChange = () => {
       const stored = localStorage.getItem('family100-game-state');
       if (stored) {
-        setGameState(JSON.parse(stored));
+        const newState = JSON.parse(stored);
+        
+        // Check for newly revealed answers
+        const currentAnswers = newState.answers[newState.round] || [];
+        const currentRevealed = currentAnswers
+          .filter((answer: Answer) => answer.revealed)
+          .map((answer: Answer) => `${newState.round}-${answer.text}`);
+        
+        const newRevealed = currentRevealed.filter(
+          (id: string) => !prevRevealedRef.current.includes(id)
+        );
+        
+        // Play sound for each newly revealed answer
+        for (const revealedId of newRevealed) {
+          const answer = currentAnswers.find((a: Answer) => 
+            a.revealed && `${newState.round}-${a.text}` === revealedId
+          );
+          if (answer) {
+            playRevealSound(answer.points, currentAnswers);
+          }
+        }
+        
+        // Check for strikes increase and play wrong answer sound
+        const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
+        const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
+        
+        if (leftStrikesIncreased || rightStrikesIncreased) {
+          playWrongAnswerSound();
+        }
+        
+        prevRevealedRef.current = currentRevealed;
+        prevStrikesRef.current = {
+          left: newState.teamLeft.strikes,
+          right: newState.teamRight.strikes
+        };
+        setGameState(newState);
       }
     };
 
@@ -53,7 +92,7 @@ export const DisplayView = () => {
     handleStorageChange(); // Load initial state
 
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [playRevealSound, playWrongAnswerSound]);
 
   // Calculate answer count based on round
   const getAnswerCount = (round: number) => {
