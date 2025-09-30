@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { database, ref, set } from "../firebase";
+import { database, ref, set, onValue } from "../firebase";
 import { GameState, Answer, Team } from "../types/game";
 import { useToast } from "./use-toast";
 
@@ -40,6 +40,42 @@ export const useGameState = () => {
       bcRef.current = null;
     };
   }, []);
+
+  // Firebase listener for real-time sync across devices
+  useEffect(() => {
+    const gameStateRef = ref(database, 'family100-game-state');
+    const unsubscribe = onValue(gameStateRef, (snapshot) => {
+      const firebaseData = snapshot.val();
+      if (firebaseData) {
+        console.log('useGameState: Received update from Firebase:', firebaseData);
+        // Only update if the data is different from current state
+        if (JSON.stringify(firebaseData) !== JSON.stringify(gameState)) {
+          // Ensure answers structure is complete and arrays
+          const processedData = {
+            ...firebaseData,
+            answers: {
+              1: Array.isArray(firebaseData.answers?.[1]) ? firebaseData.answers[1] : [],
+              2: Array.isArray(firebaseData.answers?.[2]) ? firebaseData.answers[2] : [],
+              3: Array.isArray(firebaseData.answers?.[3]) ? firebaseData.answers[3] : [],
+              4: Array.isArray(firebaseData.answers?.[4]) ? firebaseData.answers[4] : [],
+              5: Array.isArray(firebaseData.answers?.[5]) ? firebaseData.answers[5] : []
+            }
+          };
+          setGameState(processedData);
+          // Also update localStorage to keep it in sync
+          try {
+            localStorage.setItem('family100-game-state', JSON.stringify(processedData));
+          } catch (e) {
+            console.error('useGameState: Failed to update localStorage from Firebase', e);
+          }
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [gameState]);
 
   // Load saved state
   useEffect(() => {
