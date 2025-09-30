@@ -55,6 +55,21 @@ export const AdminPanel = () => {
 
   const [activeTab, setActiveTab] = useState<"game" | "answers" | "teams">("game");
 
+  // BroadcastChannel for same-window/tab communication
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  useEffect(() => {
+    try {
+      bcRef.current = new BroadcastChannel('family100-game');
+      console.log('AdminPanel: BroadcastChannel initialized');
+    } catch (e) {
+      console.warn('AdminPanel: BroadcastChannel not supported');
+    }
+    return () => {
+      bcRef.current?.close();
+      bcRef.current = null;
+    };
+  }, []);
+
   // Load saved state
   useEffect(() => {
     try {
@@ -117,6 +132,13 @@ export const AdminPanel = () => {
       newValue: JSON.stringify(newState)
     }));
     console.log('AdminPanel: Storage event dispatched');
+    // Broadcast to same-tab listeners (DisplayView in same SPA)
+    try {
+      bcRef.current?.postMessage({ type: 'state', payload: newState });
+      console.log('AdminPanel: BroadcastChannel message posted');
+    } catch (e) {
+      console.warn('AdminPanel: BroadcastChannel post failed', e);
+    }
   };
 
   const updateQuestion = (question: string) => {

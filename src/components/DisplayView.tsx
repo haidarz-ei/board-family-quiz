@@ -105,6 +105,58 @@ export const DisplayView = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [playRevealSound, playWrongAnswerSound]);
 
+  // Listen via BroadcastChannel (same-tab SPA updates)
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('family100-game');
+      const onMessage = (event: MessageEvent) => {
+        const data: any = (event as any).data;
+        if (data?.type === 'state' && data.payload) {
+          const newState = data.payload as GameState;
+          // Check for newly revealed answers
+          const currentAnswers = newState.answers[newState.round] || [];
+          const currentRevealed = currentAnswers
+            .filter((answer: Answer) => answer?.revealed)
+            .map((answer: Answer) => `${newState.round}-${answer.text}`);
+
+          const newRevealed = currentRevealed.filter(
+            (id: string) => !prevRevealedRef.current.includes(id)
+          );
+
+          for (const revealedId of newRevealed) {
+            const answer = currentAnswers.find((a: Answer) => a?.revealed && `${newState.round}-${a.text}` === revealedId);
+            if (answer) {
+              playRevealSound(answer.points, currentAnswers);
+            }
+          }
+
+          const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
+          const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
+          if (leftStrikesIncreased || rightStrikesIncreased) {
+            playWrongAnswerSound();
+          }
+
+          prevRevealedRef.current = currentRevealed;
+          prevStrikesRef.current = {
+            left: newState.teamLeft.strikes,
+            right: newState.teamRight.strikes
+          };
+
+          setGameState(newState);
+        }
+      };
+      bc.addEventListener('message', onMessage as any);
+    } catch (e) {
+      console.warn('DisplayView: BroadcastChannel not supported');
+    }
+    return () => {
+      try { bc?.close(); } catch {}
+    };
+  }, [playRevealSound, playWrongAnswerSound]);
+
+
+
   // Calculate answer count based on round
   const getAnswerCount = (round: number) => {
     if (round === 5) return 10; // Bonus round
