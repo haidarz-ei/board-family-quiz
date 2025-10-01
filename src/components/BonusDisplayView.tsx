@@ -71,7 +71,7 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
   }, [gameState.answers, gameState.round, gameState.teamLeft.strikes, gameState.teamRight.strikes, currentRoundAnswers, playRevealSound, playWrongAnswerSound]);
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans relative">
+    <div className="h-screen bg-black text-white overflow-hidden font-sans relative">
       <video autoPlay muted loop id="bgVideo" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-auto z-0">
         <source src="/video/1.mp4" type="video/mp4" />
         Browser Anda tidak mendukung mp4.
@@ -79,7 +79,7 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
 
       <div className="game-container relative z-10 flex items-start justify-center p-10 gap-32 flex-nowrap text-gray-800">
         {gameState.round !== 5 && (
-          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '20px'}}>
             <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
               {gameState.teamLeft.name}
             </div>
@@ -101,7 +101,7 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
         )}
 
         {/* PAPAN JAWABAN BONUS */}
-        <div className="board-wrapper flex flex-col items-center gap-5" style={{marginTop: '100px'}}>
+        <div className="board-wrapper flex flex-col items-center gap-5" style={{marginTop: '20px'}}>
           <div className="board p-4 min-w-[800px] relative">
             <div className="flex justify-between items-start gap-8 w-full relative">
               {/* Left Column - Person 1 (Answers 1-5) */}
@@ -159,16 +159,16 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
           </div>
 
           {/* TOTAL SCORE DI LUAR BOARD */}
-          <div className="total-box flex justify-between items-center rounded-full p-1.5 text-xl font-bold w-full max-w-[250px] ml-auto mr-5 shadow-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
-            <div className="total-label text-3xl font-bold ml-5">TOTAL</div>
-            <div className="total-score px-3.75 py-1.25 rounded-[30px] text-3xl font-bold bg-yellow-200 text-yellow-900 shadow-lg">
+          <div className="total-box flex justify-between items-center rounded-full p-1 text-lg font-bold w-full max-w-[200px] ml-auto mr-5 shadow-lg bg-orange-500 text-white" style={{ marginTop: '-10px' }}>
+            <div className="total-label text-2xl font-bold ml-3">TOTAL</div>
+            <div className="total-score px-2 py-1 rounded-[20px] text-2xl font-bold bg-white text-orange-500">
               {gameState.totalScore}
             </div>
           </div>
         </div>
 
         {gameState.round !== 5 && (
-          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '150px'}}>
+          <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '20px'}}>
             <div className="team-name inline-block font-semibold text-3xl px-7.5 py-1.5 rounded-[30px] mb-1 font-poppins shadow-lg bg-yellow-200 border-2 border-yellow-300 text-gray-800">
               {gameState.teamRight.name}
             </div>

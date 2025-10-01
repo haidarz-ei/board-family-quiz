@@ -6,7 +6,7 @@ import { GameState, Answer } from "@/types/game";
 
 interface GameControlTabProps {
   gameState: GameState;
-  updateQuestion: (question: string) => void;
+  updateQuestion: (question: string, round?: number) => void;
   saveGameState: (state: GameState) => void;
   setPlayingTeam: (team: 'left' | 'right' | null) => void;
   addStrike: (team: 'left' | 'right') => void;
@@ -16,6 +16,7 @@ interface GameControlTabProps {
   getAnswerCount: (round: number) => number;
   revealAnswer: (index: number, round?: number) => void;
   hideAnswer: (index: number, round?: number) => void;
+  toggleShowQuestion: (round: number) => void;
   toast: (options: { title: string; description?: string }) => void;
 }
 
@@ -32,9 +33,13 @@ export const GameControlTab = ({
   getAnswerCount,
   revealAnswer,
   hideAnswer,
+  toggleShowQuestion,
   toast
 }: GameControlTabProps) => {
   const [selectedRound, setSelectedRound] = useState(gameState.round);
+
+
+
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = getAnswerCount(gameState.round);
   const filledCurrent = currentRoundAnswers.filter(a => a !== null).length;
@@ -47,6 +52,8 @@ export const GameControlTab = ({
     if (!newState.answers[selectedRound] || newState.answers[selectedRound].length === 0) {
       newState.answers[selectedRound] = [];
     }
+
+
 
     // Calculate total score for the new round
     const currentRoundAnswers = newState.answers[selectedRound] || [];
@@ -65,14 +72,20 @@ export const GameControlTab = ({
           <CardTitle>Kontrol Game</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="question">Pertanyaan</Label>
-            <Input
-              id="question"
-              value={gameState.question}
-              onChange={(e) => updateQuestion(e.target.value)}
-              placeholder="Masukkan pertanyaan..."
-            />
+            <div className="flex items-center space-x-4">
+              <Input
+                id="question"
+                value={gameState.questions[gameState.round] || ""}
+                onChange={(e) => updateQuestion(e.target.value, gameState.round)}
+                placeholder="Masukkan pertanyaan..."
+                className="flex-1"
+              />
+              <Button onClick={() => toggleShowQuestion(gameState.round)} variant={gameState.showQuestion[gameState.round] ? "destructive" : "default"} size="sm">
+                {gameState.showQuestion[gameState.round] ? "Sembunyikan" : "Munculkan Pertanyaan"}
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

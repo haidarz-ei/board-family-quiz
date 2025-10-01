@@ -11,11 +11,12 @@ export interface Answer {
 }
 
 export interface GameState {
-  question: string;
+  questions: { [round: number]: string };
   answers: { [round: number]: (Answer | null)[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
   round: number;
   currentPlayingTeam: 'left' | 'right' | null;
+  showQuestion: { [round: number]: boolean };
 }

@@ -33,7 +33,10 @@ export const AdminPanel = () => {
     addStrike,
     resetStrikes,
     giveRoundPointsToTeam,
-    saveGameState
+    saveGameState,
+    toggleShowQuestion,
+    showQuestion,
+    hideQuestion
   } = useGameState();
 
   return (
@@ -73,6 +76,7 @@ export const AdminPanel = () => {
         getAnswerCount={getAnswerCount}
         revealAnswer={revealAnswer}
         hideAnswer={hideAnswer}
+        toggleShowQuestion={toggleShowQuestion}
         toast={toast}
       />
           </TabsContent>

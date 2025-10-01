@@ -8,7 +8,7 @@ export const useGameState = () => {
   const bcRef = useRef<BroadcastChannel | null>(null);
 
   const [gameState, setGameState] = useState<GameState>({
-    question: "",
+    questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
     answers: {
       1: [],
       2: [],
@@ -20,7 +20,8 @@ export const useGameState = () => {
     teamRight: { name: "TIM B", score: 0, strikes: 0 },
     totalScore: 0,
     round: 1,
-    currentPlayingTeam: null
+    currentPlayingTeam: null,
+    showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
   });
 
   const [selectedRoundForAnswers, setSelectedRoundForAnswers] = useState(1);
@@ -104,11 +105,29 @@ export const useGameState = () => {
         }
 
         // Ensure other properties exist
-        parsedState.question = parsedState.question || "";
+        // Handle questions migration from old single question to questions per round
+        if (typeof parsedState.question === 'string') {
+          // Migrate old single question to questions object
+          parsedState.questions = {
+            1: parsedState.question,
+            2: "",
+            3: "",
+            4: "",
+            5: ""
+          };
+          delete parsedState.question;
+        } else if (!parsedState.questions || typeof parsedState.questions !== 'object') {
+          parsedState.questions = { 1: "", 2: "", 3: "", 4: "", 5: "" };
+        }
+
         parsedState.teamLeft = parsedState.teamLeft || { name: "TIM A", score: 0, strikes: 0 };
         parsedState.teamRight = parsedState.teamRight || { name: "TIM B", score: 0, strikes: 0 };
         parsedState.totalScore = parsedState.totalScore || 0;
         parsedState.currentPlayingTeam = parsedState.currentPlayingTeam || null;
+        // Fix: Use the saved showQuestion value as is, do not force false here
+        if (!parsedState.showQuestion || typeof parsedState.showQuestion !== 'object') {
+          parsedState.showQuestion = { 1: false, 2: false, 3: false, 4: false, 5: false };
+        }
 
         setGameState(parsedState);
       }
@@ -116,13 +135,14 @@ export const useGameState = () => {
       console.error('Error loading game state:', error);
       // Reset to default state if loading fails
       setGameState({
-        question: "",
+        questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
         answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
         teamLeft: { name: "TIM A", score: 0, strikes: 0 },
         teamRight: { name: "TIM B", score: 0, strikes: 0 },
         totalScore: 0,
         round: 1,
-        currentPlayingTeam: null
+        currentPlayingTeam: null,
+        showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
       });
     }
   }, []);
@@ -163,8 +183,10 @@ export const useGameState = () => {
     }
   };
 
-  const updateQuestion = (question: string) => {
-    saveGameState({ ...gameState, question });
+  const updateQuestion = (question: string, round: number = gameState.round) => {
+    const updatedQuestions = { ...gameState.questions };
+    updatedQuestions[round] = question;
+    saveGameState({ ...gameState, questions: updatedQuestions });
   };
 
   const addAnswer = (round: number = selectedRoundForAnswers) => {
@@ -302,18 +324,45 @@ export const useGameState = () => {
   };
 
   const resetGame = () => {
+    // Clear localStorage first
+    try {
+      localStorage.removeItem('family100-game-state');
+      console.log('useGameState: localStorage cleared');
+    } catch (e) {
+      console.error('useGameState: Failed to clear localStorage', e);
+    }
+
     const resetState: GameState = {
-      question: "",
+      questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
       answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
       teamLeft: { name: "TIM A", score: 0, strikes: 0 },
       teamRight: { name: "TIM B", score: 0, strikes: 0 },
       totalScore: 0,
       round: 1,
-      currentPlayingTeam: null
+      currentPlayingTeam: null,
+      showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
     };
     saveGameState(resetState);
     setSelectedRoundForAnswers(1);
     toast({ title: "Game direset!" });
+  };
+
+  const toggleShowQuestion = (round: number = gameState.round) => {
+    const updatedShowQuestion = { ...gameState.showQuestion };
+    updatedShowQuestion[round] = !updatedShowQuestion[round];
+    saveGameState({ ...gameState, showQuestion: updatedShowQuestion });
+  };
+
+  const showQuestion = (round: number = gameState.round) => {
+    const updatedShowQuestion = { ...gameState.showQuestion };
+    updatedShowQuestion[round] = true;
+    saveGameState({ ...gameState, showQuestion: updatedShowQuestion });
+  };
+
+  const hideQuestion = (round: number = gameState.round) => {
+    const updatedShowQuestion = { ...gameState.showQuestion };
+    updatedShowQuestion[round] = false;
+    saveGameState({ ...gameState, showQuestion: updatedShowQuestion });
   };
 
 
@@ -407,6 +456,9 @@ export const useGameState = () => {
     addStrike,
     resetStrikes,
     giveRoundPointsToTeam,
-    saveGameState
+    saveGameState,
+    toggleShowQuestion,
+    showQuestion,
+    hideQuestion
   };
 };

@@ -16,13 +16,14 @@ interface Answer {
 }
 
 interface GameState {
-  question: string;
+  questions: { [round: number]: string };
   answers: { [round: number]: (Answer | null)[] };
   teamLeft: Team;
   teamRight: Team;
   totalScore: number;
   round: number;
   currentPlayingTeam: 'left' | 'right' | null;
+  showQuestion: { [round: number]: boolean };
 }
 
 export const DisplayView = () => {
@@ -31,7 +32,7 @@ export const DisplayView = () => {
   const prevStrikesRef = useRef({ left: 0, right: 0 });
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
-    question: "",
+    questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
     answers: {
       1: [],
       2: [],
@@ -43,7 +44,8 @@ export const DisplayView = () => {
     teamRight: { name: "TIM B", score: 0, strikes: 0 },
     totalScore: 0,
     round: 1,
-    currentPlayingTeam: null
+    currentPlayingTeam: null,
+    showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
   });
 
   // Listen for updates from Firebase real-time database and localStorage
@@ -109,7 +111,7 @@ export const DisplayView = () => {
       } else {
         // Set empty default state if no stored state
         const defaultState = {
-          question: "",
+          questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
           answers: {
             1: [],
             2: [],
@@ -121,7 +123,8 @@ export const DisplayView = () => {
           teamRight: { name: "TIM B", score: 0, strikes: 0 },
           totalScore: 0,
           round: 1,
-          currentPlayingTeam: null
+          currentPlayingTeam: null,
+          showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
         };
         localStorage.setItem('family100-game-state', JSON.stringify(defaultState));
         setGameState(defaultState);
@@ -177,7 +180,7 @@ export const DisplayView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white overflow-x-hidden font-sans relative" onClick={enableAudio}>
+    <div className="h-screen bg-gray-900 text-white overflow-hidden font-sans relative" onClick={enableAudio}>
       {!audioEnabled && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded-lg shadow-lg z-50 font-bold">
           Klik di sini untuk enable suara 🎵
@@ -188,11 +191,13 @@ export const DisplayView = () => {
         Browser Anda tidak mendukung mp4.
       </video>
 
-      <div className="w-full text-center py-4">
-        <h1 className="text-4xl font-bold text-white">{gameState.question}</h1>
+      <div className="w-full text-center py-4 relative z-20">
+        {gameState.showQuestion[gameState.round] && (
+          <h1 className="text-3xl font-bold text-white">{gameState.questions[gameState.round]}</h1>
+        )}
       </div>
 
-      <div className="game-container relative z-10 flex items-start justify-center p-4 gap-8 flex-nowrap text-white">
+      <div className="game-container relative z-10 flex items-start justify-center p-4 gap-8 flex-nowrap text-white" style={{ marginTop: '20px' }}>
 
         {/* TIM KIRI */}
         <div className="team-wrapper flex flex-col items-center gap-2.5" style={{marginTop: '50px'}}>
@@ -242,7 +247,7 @@ export const DisplayView = () => {
           </div>
 
           {/* TOTAL SCORE DI LUAR BOARD */}
-          <div className="total-box flex justify-between items-center rounded-full p-1 text-lg font-bold w-full max-w-[200px] ml-auto mr-5 shadow-lg bg-orange-500 text-white">
+          <div className="total-box flex justify-between items-center rounded-full p-1 text-lg font-bold w-full max-w-[200px] ml-auto mr-5 shadow-lg bg-orange-500 text-white" style={{ marginTop: '-10px' }}>
             <div className="total-label text-2xl font-bold ml-3">TOTAL</div>
             <div className="total-score px-2 py-1 rounded-[20px] text-2xl font-bold bg-white text-orange-500">
               {gameState.totalScore}
@@ -272,6 +277,8 @@ export const DisplayView = () => {
         </div>
 
       </div>
+
+
     </div>
   );
 };
