@@ -8,20 +8,20 @@ export const useGameState = () => {
   const bcRef = useRef<BroadcastChannel | null>(null);
 
   const [gameState, setGameState] = useState<GameState>({
-    questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
+    questions: { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" },
     answers: {
       1: [],
       2: [],
       3: [],
       4: [],
-      5: [] // Bonus round
+      5: [] // Bonus round (25 answers: 5 questions × 5 answers)
     },
     teamLeft: { name: "TIM A", score: 0, strikes: 0 },
     teamRight: { name: "TIM B", score: 0, strikes: 0 },
     totalScore: 0,
     round: 1,
     currentPlayingTeam: null,
-    showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
+    showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false }
   });
 
   const [selectedRoundForAnswers, setSelectedRoundForAnswers] = useState(1);
@@ -117,7 +117,7 @@ export const useGameState = () => {
           };
           delete parsedState.question;
         } else if (!parsedState.questions || typeof parsedState.questions !== 'object') {
-          parsedState.questions = { 1: "", 2: "", 3: "", 4: "", 5: "" };
+          parsedState.questions = { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" };
         }
 
         parsedState.teamLeft = parsedState.teamLeft || { name: "TIM A", score: 0, strikes: 0 };
@@ -126,7 +126,7 @@ export const useGameState = () => {
         parsedState.currentPlayingTeam = parsedState.currentPlayingTeam || null;
         // Fix: Use the saved showQuestion value as is, do not force false here
         if (!parsedState.showQuestion || typeof parsedState.showQuestion !== 'object') {
-          parsedState.showQuestion = { 1: false, 2: false, 3: false, 4: false, 5: false };
+          parsedState.showQuestion = { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false };
         }
 
         setGameState(parsedState);
@@ -135,14 +135,14 @@ export const useGameState = () => {
       console.error('Error loading game state:', error);
       // Reset to default state if loading fails
       setGameState({
-        questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
+        questions: { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" },
         answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
         teamLeft: { name: "TIM A", score: 0, strikes: 0 },
         teamRight: { name: "TIM B", score: 0, strikes: 0 },
         totalScore: 0,
         round: 1,
         currentPlayingTeam: null,
-        showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
+        showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false }
       });
     }
   }, []);
@@ -333,14 +333,14 @@ export const useGameState = () => {
     }
 
     const resetState: GameState = {
-      questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
+      questions: { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" },
       answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
       teamLeft: { name: "TIM A", score: 0, strikes: 0 },
       teamRight: { name: "TIM B", score: 0, strikes: 0 },
       totalScore: 0,
       round: 1,
       currentPlayingTeam: null,
-      showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
+      showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false }
     };
     saveGameState(resetState);
     setSelectedRoundForAnswers(1);
@@ -368,7 +368,7 @@ export const useGameState = () => {
 
 
   const getAnswerCount = (round: number) => {
-    if (round === 5) return 10; // Bonus round
+    if (round === 5) return 25; // Bonus round: 5 questions × 5 answers
     return 8 - round; // 7, 6, 5, 4 for rounds 1-4
   };
 

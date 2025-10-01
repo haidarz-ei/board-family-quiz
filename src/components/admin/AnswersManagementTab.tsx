@@ -106,125 +106,72 @@ export const AnswersManagementTab = ({
         </CardHeader>
         <CardContent>
           {selectedRoundForAnswers === 5 ? (
-            <div className="grid grid-cols-2 gap-8">
-              {/* Left Column - Orang Pertama (1-5) */}
-              <div>
-                <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Pertama</h3>
-                <div className="space-y-4">
-                  {new Array(5).fill(null).map((_, index) => {
-                    const answer = selectedRoundAnswers[index];
-                    if (answer) {
-                      return (
-                        <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                          <span className="font-bold w-8">{index + 1}.</span>
-                          <Input
-                            value={answer.text}
-                            onChange={(e) => updateAnswer(index, 'text', e.target.value, selectedRoundForAnswers)}
-                            className="flex-1"
-                          />
-                          <Input
-                            type="number"
-                            value={answer.points.toString()}
-                            onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
-                            className="w-20"
-                          />
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteAnswer(index, selectedRoundForAnswers)}
-                          >
-                            Hapus
-                          </Button>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{index + 1}.</span>
-                            <span>Jawaban belum ditambahkan</span>
+            <div className="space-y-8">
+              {[5, 6, 7, 8, 9].map((questionRound) => (
+                <div key={questionRound} className="border rounded-lg p-4">
+                  <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">
+                    Pertanyaan {questionRound - 4}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {new Array(5).fill(null).map((_, index) => {
+                      const answerIndex = (questionRound - 5) * 5 + index;
+                      const answer = selectedRoundAnswers[answerIndex];
+                      if (answer) {
+                        return (
+                          <div key={answerIndex} className="flex items-center gap-2 p-3 border rounded-lg">
+                            <span className="font-bold w-6">{index + 1}.</span>
+                            <Input
+                              value={answer.text}
+                              onChange={(e) => updateAnswer(answerIndex, 'text', e.target.value, selectedRoundForAnswers)}
+                              className="flex-1 text-sm"
+                              placeholder="Jawaban..."
+                            />
+                            <Input
+                              type="number"
+                              value={answer.points.toString()}
+                              onChange={(e) => updateAnswer(answerIndex, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
+                              className="w-16 text-sm"
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteAnswer(answerIndex, selectedRoundForAnswers)}
+                              className="h-8 w-8 p-0"
+                            >
+                              ×
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setTargetIndex(index);
-                              setNewAnswer({ text: "", points: 0 });
-                              toast({ title: `Siap menambahkan jawaban di posisi ${index + 1}` });
-                              newAnswerTextRef.current?.focus();
-                            }}
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={answerIndex}
+                            className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border bg-muted"
                           >
-                            +
-                          </Button>
-                        </div>
-                      );
-                    }
-                  })}
-                </div>
-              </div>
-
-              {/* Right Column - Orang Kedua (6-10) */}
-              <div>
-                <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Kedua</h3>
-                <div className="space-y-4">
-                  {new Array(5).fill(null).map((_, index) => {
-                    const actualIndex = index + 5;
-                    const answer = selectedRoundAnswers[actualIndex];
-                    if (answer) {
-                      return (
-                        <div key={actualIndex} className="flex items-center gap-4 p-4 border rounded-lg">
-                          <span className="font-bold w-8">{actualIndex + 1}.</span>
-                          <Input
-                            value={answer.text}
-                            onChange={(e) => updateAnswer(actualIndex, 'text', e.target.value, selectedRoundForAnswers)}
-                            className="flex-1"
-                          />
-                          <Input
-                            type="number"
-                            value={answer.points.toString()}
-                            onChange={(e) => updateAnswer(actualIndex, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
-                            className="w-20"
-                          />
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteAnswer(actualIndex, selectedRoundForAnswers)}
-                          >
-                            Hapus
-                          </Button>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={actualIndex}
-                          className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{actualIndex + 1}.</span>
-                            <span>Jawaban belum ditambahkan</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-sm">{index + 1}.</span>
+                              <span className="text-sm text-muted-foreground">Belum ada</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setTargetIndex(answerIndex);
+                                setNewAnswer({ text: "", points: 0 });
+                                toast({ title: `Siap menambahkan jawaban` });
+                                newAnswerTextRef.current?.focus();
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              +
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setTargetIndex(actualIndex);
-                              setNewAnswer({ text: "", points: 0 });
-                              toast({ title: `Siap menambahkan jawaban di posisi ${actualIndex + 1}` });
-                              newAnswerTextRef.current?.focus();
-                            }}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      );
-                    }
-                  })}
+                        );
+                      }
+                    })}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-4">

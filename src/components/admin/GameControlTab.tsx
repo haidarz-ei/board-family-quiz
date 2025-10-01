@@ -37,6 +37,7 @@ export const GameControlTab = ({
   toast
 }: GameControlTabProps) => {
   const [selectedRound, setSelectedRound] = useState(gameState.round);
+  const [selectedBonusQuestion, setSelectedBonusQuestion] = useState(5);
 
 
 
@@ -75,15 +76,28 @@ export const GameControlTab = ({
           <div className="space-y-2">
             <Label htmlFor="question">Pertanyaan</Label>
             <div className="flex items-center space-x-4">
+              {gameState.round === 5 && (
+                <select
+                  className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedBonusQuestion}
+                  onChange={(e) => setSelectedBonusQuestion(parseInt(e.target.value) || 5)}
+                >
+                  <option value={5}>Pertanyaan 1</option>
+                  <option value={6}>Pertanyaan 2</option>
+                  <option value={7}>Pertanyaan 3</option>
+                  <option value={8}>Pertanyaan 4</option>
+                  <option value={9}>Pertanyaan 5</option>
+                </select>
+              )}
               <Input
                 id="question"
-                value={gameState.questions[gameState.round] || ""}
-                onChange={(e) => updateQuestion(e.target.value, gameState.round)}
+                value={gameState.questions[selectedBonusQuestion] || ""}
+                onChange={(e) => updateQuestion(e.target.value, selectedBonusQuestion)}
                 placeholder="Masukkan pertanyaan..."
                 className="flex-1"
               />
-              <Button onClick={() => toggleShowQuestion(gameState.round)} variant={gameState.showQuestion[gameState.round] ? "destructive" : "default"} size="sm">
-                {gameState.showQuestion[gameState.round] ? "Sembunyikan" : "Munculkan Pertanyaan"}
+              <Button onClick={() => toggleShowQuestion(selectedBonusQuestion)} variant={gameState.showQuestion[selectedBonusQuestion] ? "destructive" : "default"} size="sm">
+                {gameState.showQuestion[selectedBonusQuestion] ? "Sembunyikan" : "Munculkan Pertanyaan"}
               </Button>
             </div>
           </div>
@@ -216,113 +230,63 @@ export const GameControlTab = ({
         </CardHeader>
         <CardContent>
           {gameState.round === 5 ? (
-            <div className="grid grid-cols-2 gap-8">
-              {/* Left Column - Orang Pertama (1-5) */}
-              <div>
-                <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Pertama</h3>
-                <div className="space-y-4">
-                  {new Array(5).fill(null).map((_, index) => {
-                    const answer = currentRoundAnswers[index];
-                    if (answer) {
-                      return (
-                        <div
-                          key={index}
-                          className={`flex items-center justify-between p-4 rounded-lg border ${
-                            answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{index + 1}.</span>
-                            <span className={answer.revealed ? 'font-bold' : ''}>
-                              {answer.text} ({answer.points})
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => answer.revealed ? hideAnswer(index, gameState.round) : revealAnswer(index, gameState.round)}
-                            variant={answer.revealed ? "destructive" : "default"}
+            <div className="space-y-8">
+              {[5, 6, 7, 8, 9].map((questionRound) => (
+                <div key={questionRound} className="border rounded-lg p-4">
+                  <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">
+                    Pertanyaan {questionRound - 4}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {new Array(5).fill(null).map((_, index) => {
+                      const answerIndex = (questionRound - 5) * 5 + index;
+                      const answer = currentRoundAnswers[answerIndex];
+                      if (answer) {
+                        return (
+                          <div
+                            key={answerIndex}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
+                            }`}
                           >
-                            {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
-                          </Button>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{index + 1}.</span>
-                            <span>Jawaban belum ditambahkan</span>
+                            <div className="flex items-center space-x-3">
+                              <span className="font-bold w-6">{index + 1}.</span>
+                              <span className={answer.revealed ? 'font-bold' : ''}>
+                                {answer.text} ({answer.points})
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => answer.revealed ? hideAnswer(answerIndex, gameState.round) : revealAnswer(answerIndex, gameState.round)}
+                              variant={answer.revealed ? "destructive" : "default"}
+                            >
+                              {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => toast({ title: `Tidak ada jawaban di posisi ${index + 1}` })}
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={answerIndex}
+                            className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border bg-muted"
                           >
-                            Ungkap
-                          </Button>
-                        </div>
-                      );
-                    }
-                  })}
+                            <div className="flex items-center space-x-3">
+                              <span className="font-bold w-6">{index + 1}.</span>
+                              <span>Jawaban belum ditambahkan</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toast({ title: `Tidak ada jawaban di posisi ${answerIndex + 1}` })}
+                            >
+                              Ungkap
+                            </Button>
+                          </div>
+                        );
+                      }
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              {/* Right Column - Orang Kedua (6-10) */}
-              <div>
-                <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">Orang Kedua</h3>
-                <div className="space-y-4">
-                  {new Array(5).fill(null).map((_, index) => {
-                    const actualIndex = index + 5;
-                    const answer = currentRoundAnswers[actualIndex];
-                    if (answer) {
-                      return (
-                        <div
-                          key={actualIndex}
-                          className={`flex items-center justify-between p-4 rounded-lg border ${
-                            answer.revealed ? 'bg-game-gold/20 border-game-gold' : 'bg-muted border-border'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{actualIndex + 1}.</span>
-                            <span className={answer.revealed ? 'font-bold' : ''}>
-                              {answer.text} ({answer.points})
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => answer.revealed ? hideAnswer(actualIndex, gameState.round) : revealAnswer(actualIndex, gameState.round)}
-                            variant={answer.revealed ? "destructive" : "default"}
-                          >
-                            {answer.revealed ? 'Sembunyikan' : 'Ungkap'}
-                          </Button>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={actualIndex}
-                          className="flex items-center justify-between p-4 rounded-lg border border-dashed border-border bg-muted"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <span className="font-bold">{actualIndex + 1}.</span>
-                            <span>Jawaban belum ditambahkan</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => toast({ title: `Tidak ada jawaban di posisi ${actualIndex + 1}` })}
-                          >
-                            Ungkap
-                          </Button>
-                        </div>
-                      );
-                    }
-                  })}
-                </div>
-              </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-4">
