@@ -89,7 +89,7 @@ export const AnswersManagementTab = ({
               />
             </div>
             <div className="flex items-end">
-              <Button onClick={() => addAnswer(selectedRoundForAnswers)}>Tambah</Button>
+              <Button onClick={() => addAnswer(selectedRoundForAnswers)}>{targetIndex !== null ? "Update" : "Tambah"}</Button>
             </div>
           </div>
 
@@ -132,6 +132,19 @@ export const AnswersManagementTab = ({
                               onChange={(e) => updateAnswer(answerIndex, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
                               className="w-16 text-sm"
                             />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setTargetIndex(answerIndex);
+                                setNewAnswer({ text: answer.text, points: answer.points });
+                                toast({ title: `Edit jawaban ${answerIndex + 1}` });
+                                newAnswerTextRef.current?.focus();
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              E
+                            </Button>
                             <Button
                               size="sm"
                               variant="destructive"
@@ -192,6 +205,18 @@ export const AnswersManagementTab = ({
                         onChange={(e) => updateAnswer(index, 'points', parseInt(e.target.value) || 0, selectedRoundForAnswers)}
                         className="w-20"
                       />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setTargetIndex(index);
+                          setNewAnswer({ text: answer.text, points: answer.points });
+                          toast({ title: `Edit jawaban ${index + 1}` });
+                          newAnswerTextRef.current?.focus();
+                        }}
+                      >
+                        Edit
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"

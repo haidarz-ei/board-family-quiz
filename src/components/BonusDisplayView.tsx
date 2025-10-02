@@ -1,27 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useRevealSound } from "../hooks/useRevealSound";
-
-interface Team {
-  name: string;
-  score: number;
-  strikes: number;
-}
-
-interface Answer {
-  text: string;
-  points: number;
-  revealed: boolean;
-}
-
-interface GameState {
-  question: string;
-  answers: { [round: number]: (Answer | null)[] };
-  teamLeft: Team;
-  teamRight: Team;
-  totalScore: number;
-  round: number;
-  currentPlayingTeam: 'left' | 'right' | null;
-}
+import { GameState, Answer } from "../types/game";
 
 export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
   const { playRevealSound, playWrongAnswerSound } = useRevealSound();
@@ -76,6 +55,12 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
         <source src="/video/1.mp4" type="video/mp4" />
         Browser Anda tidak mendukung mp4.
       </video>
+
+      <div className="w-full text-center py-4 relative z-20">
+        {gameState.showQuestion[gameState.round] && (
+          <h1 className="text-3xl font-bold text-white">{gameState.questions[gameState.round]}</h1>
+        )}
+      </div>
 
       <div className="game-container relative z-10 flex items-start justify-center p-10 gap-32 flex-nowrap text-gray-800">
         {gameState.round !== 5 && (

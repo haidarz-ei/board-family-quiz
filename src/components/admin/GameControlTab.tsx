@@ -76,29 +76,44 @@ export const GameControlTab = ({
           <div className="space-y-2">
             <Label htmlFor="question">Pertanyaan</Label>
             <div className="flex items-center space-x-4">
-              {gameState.round === 5 && (
-                <select
-                  className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedBonusQuestion}
-                  onChange={(e) => setSelectedBonusQuestion(parseInt(e.target.value) || 5)}
-                >
-                  <option value={5}>Pertanyaan 1</option>
-                  <option value={6}>Pertanyaan 2</option>
-                  <option value={7}>Pertanyaan 3</option>
-                  <option value={8}>Pertanyaan 4</option>
-                  <option value={9}>Pertanyaan 5</option>
-                </select>
+              {gameState.round === 5 ? (
+                <>
+                  <select
+                    className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={selectedBonusQuestion}
+                    onChange={(e) => setSelectedBonusQuestion(parseInt(e.target.value) || 5)}
+                  >
+                    <option value={5}>Pertanyaan 1</option>
+                    <option value={6}>Pertanyaan 2</option>
+                    <option value={7}>Pertanyaan 3</option>
+                    <option value={8}>Pertanyaan 4</option>
+                    <option value={9}>Pertanyaan 5</option>
+                  </select>
+                  <Input
+                    id="question"
+                    value={gameState.questions[selectedBonusQuestion] || ""}
+                    onChange={(e) => updateQuestion(e.target.value, selectedBonusQuestion)}
+                    placeholder="Masukkan pertanyaan..."
+                    className="flex-1"
+                  />
+                  <Button onClick={() => toggleShowQuestion(selectedBonusQuestion)} variant={gameState.showQuestion[selectedBonusQuestion] ? "destructive" : "default"} size="sm">
+                    {gameState.showQuestion[selectedBonusQuestion] ? "Sembunyikan" : "Munculkan Pertanyaan"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="question"
+                    value={gameState.questions[gameState.round] || ""}
+                    onChange={(e) => updateQuestion(e.target.value, gameState.round)}
+                    placeholder="Masukkan pertanyaan..."
+                    className="flex-1"
+                  />
+                  <Button onClick={() => toggleShowQuestion(gameState.round)} variant={gameState.showQuestion[gameState.round] ? "destructive" : "default"} size="sm">
+                    {gameState.showQuestion[gameState.round] ? "Sembunyikan" : "Munculkan Pertanyaan"}
+                  </Button>
+                </>
               )}
-              <Input
-                id="question"
-                value={gameState.questions[selectedBonusQuestion] || ""}
-                onChange={(e) => updateQuestion(e.target.value, selectedBonusQuestion)}
-                placeholder="Masukkan pertanyaan..."
-                className="flex-1"
-              />
-              <Button onClick={() => toggleShowQuestion(selectedBonusQuestion)} variant={gameState.showQuestion[selectedBonusQuestion] ? "destructive" : "default"} size="sm">
-                {gameState.showQuestion[selectedBonusQuestion] ? "Sembunyikan" : "Munculkan Pertanyaan"}
-              </Button>
             </div>
           </div>
 
