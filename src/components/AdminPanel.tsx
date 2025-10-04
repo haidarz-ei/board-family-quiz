@@ -6,6 +6,7 @@ import { useGameState } from "@/hooks/useGameState";
 import { GameControlTab } from "@/components/admin/GameControlTab";
 import { AnswersManagementTab } from "@/components/admin/AnswersManagementTab";
 import { TeamsManagementTab } from "@/components/admin/TeamsManagementTab";
+import { Settings } from "lucide-react";
 
 export const AdminPanel = () => {
   const { toast } = useToast();
@@ -51,6 +52,9 @@ export const AdminPanel = () => {
             </Button>
             <Button onClick={resetGame} variant="destructive">
               Reset Game
+            </Button>
+            <Button variant="secondary" size="icon">
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>

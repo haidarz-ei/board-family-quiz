@@ -9,11 +9,12 @@ const Index = () => {
   const { user, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-game">
+    // <div className="min-h-screen bg-gradient-game">
+    <div className="min-h-screen" style={{ backgroundImage: 'url(/img/halloween.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       {/* Header */}
       <header className="flex justify-between items-center p-6">
-        <div className="text-2xl font-bold text-primary">
-          FAMILY 100
+        <div className="text-2xl font-bold text-white">
+          HPRO
         </div>
         <div className="flex items-center gap-4">
           {!user && (
@@ -59,8 +60,8 @@ const Index = () => {
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-4xl font-bold text-primary mb-4">
-              FAMILY 100
+            <CardTitle className="text-4xl font-bold  mb-4">
+              FAMILY FUN TIME
             </CardTitle>
             <p className="text-muted-foreground">
               Pilih mode untuk memulai
