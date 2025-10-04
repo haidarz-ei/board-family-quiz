@@ -18,23 +18,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Register device session when user logs in
+        if (session?.user && _event === 'SIGNED_IN') {
+          setTimeout(async () => {
+            await registerDeviceSession(session.user.id);
+          }, 0);
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Register device session for existing session
+      if (session?.user) {
+        setTimeout(async () => {
+          await registerDeviceSession(session.user.id);
+        }, 0);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Helper function to register device session
+  const registerDeviceSession = async (userId: string) => {
+    try {
+      const deviceId = getDeviceId();
+      const deviceInfo = getDeviceInfo();
+      const deviceName = `${navigator.platform} - ${new Date().toLocaleDateString('id-ID')}`;
+
+      await supabase.rpc('register_device_session', {
+        p_user_id: userId,
+        p_device_id: deviceId,
+        p_device_name: deviceName,
+        p_device_info: deviceInfo
+      });
+    } catch (error) {
+      console.error('Error registering device:', error);
+    }
+  };
+
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+      deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('device_id', deviceId);
+    }
+    return deviceId;
+  };
+
+  const getDeviceInfo = () => {
+    return {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      screenResolution: `${window.screen.width}x${window.screen.height}`
+    };
+  };
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;

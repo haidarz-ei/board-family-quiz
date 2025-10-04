@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { Monitor } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -47,13 +48,24 @@ const Index = () => {
           </Button>
 
           {user && (
-            <Button 
-              onClick={() => signOut()}
-              variant="outline"
-              className="w-full"
-            >
-              Logout
-            </Button>
+            <>
+              <Button 
+                onClick={() => navigate('/devices')}
+                variant="outline"
+                className="w-full"
+              >
+                <Monitor className="mr-2 h-4 w-4" />
+                Kelola Perangkat
+              </Button>
+              
+              <Button 
+                onClick={() => signOut()}
+                variant="outline"
+                className="w-full"
+              >
+                Logout
+              </Button>
+            </>
           )}
           
           <p className="text-sm text-muted-foreground text-center mt-4">
