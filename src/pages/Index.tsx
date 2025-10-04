@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
@@ -59,6 +59,16 @@ const Index = () => {
           <p className="text-sm text-muted-foreground text-center mt-4">
             Admin Panel untuk mengatur game, Display untuk menampilkan ke layar
           </p>
+
+          <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
+            <Link to="/privacy" className="hover:underline">
+              Kebijakan Privasi
+            </Link>
+            <span>•</span>
+            <Link to="/terms" className="hover:underline">
+              Syarat & Ketentuan
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
