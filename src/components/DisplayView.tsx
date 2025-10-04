@@ -168,7 +168,8 @@ export const DisplayView = () => {
   const enableAudio = () => {
     if (!audioEnabled) {
       // Create and play a silent audio to unlock audio context
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const webkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const audioContext = new (window.AudioContext || webkitAudioContext!)();
       const buffer = audioContext.createBuffer(1, 1, 22050);
       const source = audioContext.createBufferSource();
       source.buffer = buffer;

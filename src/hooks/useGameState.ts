@@ -83,7 +83,7 @@ export const useGameState = () => {
     try {
       const saved = localStorage.getItem('family100-game-state');
       if (saved) {
-        let parsedState = JSON.parse(saved);
+        const parsedState = JSON.parse(saved);
 
         // Ensure answers is an object
         if (!parsedState.answers || typeof parsedState.answers !== 'object') {
@@ -192,7 +192,7 @@ export const useGameState = () => {
   const addAnswer = (round: number = selectedRoundForAnswers) => {
     if (newAnswer.text.trim()) {
       const updatedAnswers = { ...gameState.answers };
-      let arr = [...(updatedAnswers[round] || [])];
+      const arr = [...(updatedAnswers[round] || [])];
 
       // Add the new answer
       const newAnswerObj = { ...newAnswer, revealed: false };
@@ -242,10 +242,11 @@ export const useGameState = () => {
         const sortedAnswers = validAnswers.sort((a, b) => b.points - a.points);
         const nullCount = arr.length - validAnswers.length;
         const nullArray = new Array(nullCount).fill(null);
-        arr = [...sortedAnswers, ...nullArray];
+        updatedAnswers[round] = [...sortedAnswers, ...nullArray];
+      } else {
+        updatedAnswers[round] = arr;
       }
 
-      updatedAnswers[round] = arr;
       saveGameState({ ...gameState, answers: updatedAnswers });
     }
   };

@@ -44,7 +44,7 @@ export const AdminPanel = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-4xl font-bold text-foreground">Admin Panel Family 100</h1>
+          <h1 className="text-4xl font-bold text-foreground">Control Panel</h1>
           <div className="space-x-4">
             <Button onClick={() => window.open('/display', '_blank')} variant="outline">
               Buka Display
