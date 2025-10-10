@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Monitor } from "lucide-react";
+import { useUserSubscription } from "@/hooks/useUserSubscription";
+import { Monitor, Crown } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { getTierLabel, getTierColor } = useUserSubscription();
 
   return (
     // <div className="min-h-screen bg-gradient-game">
@@ -35,6 +38,10 @@ const Index = () => {
           )}
           {user && (
             <div className="flex items-center gap-2">
+              <Badge variant="outline" className={getTierColor()}>
+                <Crown className="w-3 h-3 mr-1" />
+                {getTierLabel()}
+              </Badge>
               <span className="text-sm text-white">Login sebagai: {user.email}</span>
               <Button
                 onClick={() => signOut()}

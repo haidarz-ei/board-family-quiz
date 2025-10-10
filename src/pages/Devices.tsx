@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceSession } from '../hooks/useDeviceSession';
+import { useUserSubscription } from '@/hooks/useUserSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Monitor, Smartphone, Trash2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Trash2, Crown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,7 @@ const Devices = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { devices, loading, removeDevice, currentDeviceId, fetchDevices } = useDeviceSession();
+  const { getDeviceLimit, getTierLabel, getTierColor } = useUserSubscription();
   const { toast } = useToast();
   const [deviceToRemove, setDeviceToRemove] = useState<string | null>(null);
 
@@ -90,10 +93,23 @@ const Devices = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl font-bold">Perangkat Aktif</CardTitle>
-            <CardDescription>
-              Kelola perangkat yang terhubung dengan akun Anda
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-3xl font-bold">Perangkat Aktif</CardTitle>
+                <CardDescription>
+                  Kelola perangkat yang terhubung dengan akun Anda
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={getTierColor()}>
+                  <Crown className="w-3 h-3 mr-1" />
+                  {getTierLabel()}
+                </Badge>
+                <Badge variant="secondary">
+                  {devices.length} / {getDeviceLimit()} perangkat
+                </Badge>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
