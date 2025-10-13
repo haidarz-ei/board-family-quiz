@@ -232,7 +232,7 @@ export const useGameState = () => {
 
   const updateAnswer = (index: number, field: keyof Answer, value: string | number | boolean, round: number = selectedRoundForAnswers) => {
     const updatedAnswers = { ...gameState.answers };
-    let arr = [...(updatedAnswers[round] || [])];
+    const arr = [...(updatedAnswers[round] || [])];
     if (arr[index]) {
       arr[index] = { ...arr[index], [field]: value } as Answer;
 
@@ -253,7 +253,7 @@ export const useGameState = () => {
 
   const deleteAnswer = (index: number, round: number = selectedRoundForAnswers) => {
     const updatedAnswers = { ...gameState.answers };
-    let arr = [...(updatedAnswers[round] || [])];
+    const arr = [...(updatedAnswers[round] || [])];
     if (index < arr.length) {
       arr[index] = null;
       updatedAnswers[round] = arr;
@@ -268,7 +268,7 @@ export const useGameState = () => {
 
     // Update answer revealed status and total score in one state update
     const updatedAnswers = { ...gameState.answers };
-    let arr = [...(updatedAnswers[round] || [])];
+    const arr = [...(updatedAnswers[round] || [])];
     if (arr[index]) {
       arr[index] = { ...arr[index], revealed: true } as Answer;
       updatedAnswers[round] = arr;
@@ -292,7 +292,7 @@ export const useGameState = () => {
 
     // Update answer revealed status and total score in one state update
     const updatedAnswers = { ...gameState.answers };
-    let arr = [...(updatedAnswers[round] || [])];
+    const arr = [...(updatedAnswers[round] || [])];
     if (arr[index]) {
       arr[index] = { ...arr[index], revealed: false } as Answer;
       updatedAnswers[round] = arr;

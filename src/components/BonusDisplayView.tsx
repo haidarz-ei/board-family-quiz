@@ -1,13 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useRevealSound } from "../hooks/useRevealSound";
 import { GameState, Answer } from "../types/game";
-import { database, ref, onValue } from "../firebase";
 
 export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
-  const { playRevealSound, playWrongAnswerSound, getAudioUrl } = useRevealSound();
+  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
   const prevRevealedRef = useRef<string[]>([]);
   const prevStrikesRef = useRef({ left: 0, right: 0 });
-  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = 10; // Fixed for bonus round
@@ -50,32 +48,6 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
       right: gameState.teamRight.strikes
     };
   }, [gameState.answers, gameState.round, gameState.teamLeft.strikes, gameState.teamRight.strikes, currentRoundAnswers, playRevealSound, playWrongAnswerSound]);
-
-  // Listen for audio commands from admin
-  useEffect(() => {
-    const audioCommandRef = ref(database, 'family100-audio-command');
-    const unsubscribe = onValue(audioCommandRef, (snapshot) => {
-      const command = snapshot.val();
-      if (command && command.audioType) {
-        const audioUrl = getAudioUrl(command.audioType);
-        if (audioUrl) {
-          // Stop previous audio
-          if (audioPlayerRef.current) {
-            audioPlayerRef.current.pause();
-          }
-          // Play new audio
-          const audio = new Audio(audioUrl);
-          audio.play();
-          audioPlayerRef.current = audio;
-          console.log('Playing audio from command:', command.audioType);
-        }
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [getAudioUrl]);
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden font-sans relative">
