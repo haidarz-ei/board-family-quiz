@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, Trash2, Play, Volume2 } from "lucide-react";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
+import { useGameState } from "@/hooks/useGameState";
 import { useRef, useState } from "react";
 
 export const AudioSettingsTab = () => {
   const { audioSettings, loading, uploading, uploadAudio, deleteAudio } = useAudioSettings();
+  const { playAudioOnDisplay } = useGameState();
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -48,7 +50,10 @@ export const AudioSettingsTab = () => {
       audioRef.current = null;
       setPlayingAudio(null);
     } else {
-      // Play audio
+      // Play audio on display screens via Firebase
+      playAudioOnDisplay(audioType);
+      
+      // Also play locally for preview
       if (audioRef.current) {
         audioRef.current.pause();
       }

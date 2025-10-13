@@ -27,10 +27,11 @@ interface GameState {
 }
 
 export const DisplayView = () => {
-  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const { playRevealSound, playWrongAnswerSound, getAudioUrl } = useRevealSound();
   const prevRevealedRef = useRef<string[]>([]);
   const prevStrikesRef = useRef({ left: 0, right: 0 });
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const [gameState, setGameState] = useState<GameState>({
     questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
     answers: {
@@ -139,6 +140,32 @@ export const DisplayView = () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [playRevealSound, playWrongAnswerSound]);
+
+  // Listen for audio commands from admin
+  useEffect(() => {
+    const audioCommandRef = ref(database, 'family100-audio-command');
+    const unsubscribe = onValue(audioCommandRef, (snapshot) => {
+      const command = snapshot.val();
+      if (command && command.audioType) {
+        const audioUrl = getAudioUrl(command.audioType);
+        if (audioUrl) {
+          // Stop previous audio
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+          }
+          // Play new audio
+          const audio = new Audio(audioUrl);
+          audio.play();
+          audioPlayerRef.current = audio;
+          console.log('Playing audio from command:', command.audioType);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [getAudioUrl]);
 
 
 

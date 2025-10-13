@@ -11,6 +11,7 @@ let roundPointsSound: Howl | null = null;
 
 export const useRevealSound = () => {
   const [soundsLoaded, setSoundsLoaded] = useState(false);
+  const [soundUrls, setSoundUrls] = useState<{ [key: string]: string }>({});
 
   // Load audio settings from database
   useEffect(() => {
@@ -22,9 +23,14 @@ export const useRevealSound = () => {
 
         if (error) throw error;
 
+        const urls: { [key: string]: string } = {};
+
         // Load each sound
         data?.forEach((setting) => {
           if (!setting.audio_url) return;
+
+          // Store URL for getAudioUrl function
+          urls[setting.audio_type] = setting.audio_url;
 
           const howlConfig = {
             src: [setting.audio_url],
@@ -52,6 +58,7 @@ export const useRevealSound = () => {
           }
         });
 
+        setSoundUrls(urls);
         setSoundsLoaded(true);
       } catch (error) {
         console.error('Error loading audio settings:', error);
@@ -122,11 +129,16 @@ export const useRevealSound = () => {
     }
   }, [soundsLoaded]);
 
-  return { 
-    playRevealSound, 
+  const getAudioUrl = (audioType: string): string | null => {
+    return soundUrls[audioType] || null;
+  };
+
+  return {
+    playRevealSound,
     playWrongAnswerSound,
     playAddStrikeSound,
     playRoundPointsSound,
-    soundsLoaded 
+    soundsLoaded,
+    getAudioUrl
   };
 };

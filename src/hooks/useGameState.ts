@@ -434,6 +434,19 @@ export const useGameState = () => {
     });
   };
 
+  const playAudioOnDisplay = async (audioType: string) => {
+    try {
+      // Save audio command to Firebase
+      await set(ref(database, 'family100-audio-command'), {
+        audioType,
+        timestamp: Date.now()
+      });
+      console.log('Audio command sent to display:', audioType);
+    } catch (e) {
+      console.error('Failed to send audio command:', e);
+    }
+  };
+
   return {
     gameState,
     selectedRoundForAnswers,
@@ -460,6 +473,7 @@ export const useGameState = () => {
     saveGameState,
     toggleShowQuestion,
     showQuestion,
-    hideQuestion
+    hideQuestion,
+    playAudioOnDisplay
   };
 };
