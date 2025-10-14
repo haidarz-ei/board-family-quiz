@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, Play, Volume2 } from "lucide-react";
+
+import { Upload, Trash2, Play, Volume2, Pause } from "lucide-react";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
 import { useGameState } from "@/hooks/useGameState";
 import { useRef, useState } from "react";
+
 
 export const AudioSettingsTab = () => {
   const { audioSettings, loading, uploading, uploadAudio, deleteAudio } = useAudioSettings();
@@ -12,6 +14,8 @@ export const AudioSettingsTab = () => {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+
 
   const audioTypes = [
     { type: 'regular_answer', label: 'Jawaban Reguler', description: 'Suara saat mengungkap jawaban biasa' },
@@ -74,6 +78,8 @@ export const AudioSettingsTab = () => {
     }
   };
 
+
+
   if (loading) {
     return (
       <Card>
@@ -119,7 +125,11 @@ export const AudioSettingsTab = () => {
                       variant="outline"
                       onClick={() => playAudio(setting.audio_url!, audioType.type)}
                     >
-                      <Play className={`h-4 w-4 ${playingAudio === audioType.type ? 'animate-pulse' : ''}`} />
+                      {playingAudio === audioType.type ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button
                       size="sm"

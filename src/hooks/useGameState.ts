@@ -16,8 +16,8 @@ export const useGameState = () => {
       4: [],
       5: [] // Bonus round (25 answers: 5 questions × 5 answers)
     },
-    teamLeft: { name: "TIM A", score: 0, strikes: 0 },
-    teamRight: { name: "TIM B", score: 0, strikes: 0 },
+    teamLeft: { name: "TIM A", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
+    teamRight: { name: "TIM B", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
     totalScore: 0,
     round: 1,
     currentPlayingTeam: null,
@@ -120,8 +120,18 @@ export const useGameState = () => {
           parsedState.questions = { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" };
         }
 
-        parsedState.teamLeft = parsedState.teamLeft || { name: "TIM A", score: 0, strikes: 0 };
-        parsedState.teamRight = parsedState.teamRight || { name: "TIM B", score: 0, strikes: 0 };
+        // Handle strikes migration from number to object per round
+        if (typeof parsedState.teamLeft?.strikes === 'number') {
+          parsedState.teamLeft.strikes = { 1: parsedState.teamLeft.strikes, 2: 0, 3: 0, 4: 0, 5: 0 };
+        } else if (!parsedState.teamLeft?.strikes || typeof parsedState.teamLeft.strikes !== 'object') {
+          parsedState.teamLeft = parsedState.teamLeft || { name: "TIM A", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+        }
+
+        if (typeof parsedState.teamRight?.strikes === 'number') {
+          parsedState.teamRight.strikes = { 1: parsedState.teamRight.strikes, 2: 0, 3: 0, 4: 0, 5: 0 };
+        } else if (!parsedState.teamRight?.strikes || typeof parsedState.teamRight.strikes !== 'object') {
+          parsedState.teamRight = parsedState.teamRight || { name: "TIM B", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+        }
         parsedState.totalScore = parsedState.totalScore || 0;
         parsedState.currentPlayingTeam = parsedState.currentPlayingTeam || null;
         // Fix: Use the saved showQuestion value as is, do not force false here
@@ -137,8 +147,8 @@ export const useGameState = () => {
       setGameState({
         questions: { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" },
         answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
-        teamLeft: { name: "TIM A", score: 0, strikes: 0 },
-        teamRight: { name: "TIM B", score: 0, strikes: 0 },
+        teamLeft: { name: "TIM A", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
+        teamRight: { name: "TIM B", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
         totalScore: 0,
         round: 1,
         currentPlayingTeam: null,
@@ -310,7 +320,7 @@ export const useGameState = () => {
     toast({ title: `Jawaban ${index + 1} disembunyikan!` });
   };
 
-  const updateTeam = (side: 'left' | 'right', field: keyof Team, value: string | number) => {
+  const updateTeam = (side: 'left' | 'right', field: keyof Team, value: string | number | { [round: number]: number }) => {
     const teamKey = side === 'left' ? 'teamLeft' : 'teamRight';
     const updatedTeam = { ...gameState[teamKey], [field]: value };
     saveGameState({ ...gameState, [teamKey]: updatedTeam });
@@ -336,8 +346,8 @@ export const useGameState = () => {
     const resetState: GameState = {
       questions: { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" },
       answers: { 1: [], 2: [], 3: [], 4: [], 5: [] },
-      teamLeft: { name: "TIM A", score: 0, strikes: 0 },
-      teamRight: { name: "TIM B", score: 0, strikes: 0 },
+      teamLeft: { name: "TIM A", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
+      teamRight: { name: "TIM B", score: 0, strikes: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
       totalScore: 0,
       round: 1,
       currentPlayingTeam: null,
@@ -386,16 +396,17 @@ export const useGameState = () => {
 
   const addStrike = (team: 'left' | 'right') => {
     const teamKey = team === 'left' ? 'teamLeft' : 'teamRight';
-    const currentStrikes = gameState[teamKey].strikes;
+    const currentStrikes = gameState[teamKey].strikes[gameState.round];
     if (currentStrikes < 3) {
-      const newStrikes = currentStrikes + 1;
+      const newStrikes = { ...gameState[teamKey].strikes };
+      newStrikes[gameState.round] = currentStrikes + 1;
       updateTeam(team, 'strikes', newStrikes);
       toast({
         title: `Strike ditambahkan untuk Tim ${team === 'left' ? 'Kiri' : 'Kanan'}`,
-        description: `Strike: ${newStrikes}/3`
+        description: `Strike: ${newStrikes[gameState.round]}/3`
       });
 
-      if (newStrikes === 3) {
+      if (newStrikes[gameState.round] === 3) {
         toast({
           title: "3 Strike! Tim lawan mendapat kesempatan",
           description: "Giliran berpindah ke tim lawan untuk rebutan poin"
@@ -405,7 +416,8 @@ export const useGameState = () => {
   };
 
   const resetStrikes = (team: 'left' | 'right') => {
-    updateTeam(team, 'strikes', 0);
+    const resetStrikesObj = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    updateTeam(team, 'strikes', resetStrikesObj);
     toast({ title: `Strike direset untuk Tim ${team === 'left' ? 'Kiri' : 'Kanan'}` });
   };
 
@@ -414,14 +426,15 @@ export const useGameState = () => {
     const newScore = currentScore + gameState.totalScore;
 
     // Update team score and reset total score and strikes in one state update
+    const resetStrikesObj = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const updatedState = {
       ...gameState,
       teamLeft: team === 'left'
-        ? { ...gameState.teamLeft, score: newScore, strikes: 0 }
-        : { ...gameState.teamLeft, strikes: 0 },
+        ? { ...gameState.teamLeft, score: newScore, strikes: resetStrikesObj }
+        : { ...gameState.teamLeft, strikes: resetStrikesObj },
       teamRight: team === 'right'
-        ? { ...gameState.teamRight, score: newScore, strikes: 0 }
-        : { ...gameState.teamRight, strikes: 0 },
+        ? { ...gameState.teamRight, score: newScore, strikes: resetStrikesObj }
+        : { ...gameState.teamRight, strikes: resetStrikesObj },
       totalScore: 0,
       currentPlayingTeam: null
     };

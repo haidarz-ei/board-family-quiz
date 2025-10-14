@@ -31,8 +31,8 @@ const SoundManagementTab: React.FC<SoundManagementTabProps> = ({
   const deleteSoundFile = async (soundUrl: string) => {
     try {
       const url = new URL(soundUrl);
-      const path = url.pathname.split('/storage/v1/object/public/audio/')[1];
-      await supabase.storage.from('audio').remove([path]);
+      const path = url.pathname.split('/storage/v1/object/public/game-audio/')[1];
+      await supabase.storage.from('game-audio').remove([path]);
     } catch (error) {
       console.error('Error deleting sound:', error);
     }
@@ -41,8 +41,8 @@ const SoundManagementTab: React.FC<SoundManagementTabProps> = ({
   const deleteMusicFile = async (musicUrl: string) => {
     try {
       const url = new URL(musicUrl);
-      const path = url.pathname.split('/storage/v1/object/public/audio/')[1];
-      await supabase.storage.from('audio').remove([path]);
+      const path = url.pathname.split('/storage/v1/object/public/game-audio/')[1];
+      await supabase.storage.from('game-audio').remove([path]);
     } catch (error) {
       console.error('Error deleting music:', error);
     }
@@ -53,13 +53,13 @@ const SoundManagementTab: React.FC<SoundManagementTabProps> = ({
       try {
         const fileName = `sounds/${soundType}.${file.name.split('.').pop()}`;
         const { data, error } = await supabase.storage
-          .from('audio')
+          .from('game-audio')
           .upload(fileName, file, { upsert: true });
 
         if (error) throw error;
 
         const { data: publicUrl } = supabase.storage
-          .from('audio')
+          .from('game-audio')
           .getPublicUrl(fileName);
 
         updateSoundAssignments({ [soundType]: publicUrl.publicUrl });
@@ -77,13 +77,13 @@ const SoundManagementTab: React.FC<SoundManagementTabProps> = ({
       try {
         const fileName = `music/${newMusicName.trim()}.${file.name.split('.').pop()}`;
         const { data, error } = await supabase.storage
-          .from('audio')
+          .from('game-audio')
           .upload(fileName, file, { upsert: true });
 
         if (error) throw error;
 
         const { data: publicUrl } = supabase.storage
-          .from('audio')
+          .from('game-audio')
           .getPublicUrl(fileName);
 
         addMusic({ name: newMusicName.trim(), url: publicUrl.publicUrl });

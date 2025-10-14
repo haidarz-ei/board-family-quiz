@@ -174,13 +174,13 @@ export const GameControlTab = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Kontrol Tim Kiri - Strike: {gameState.teamLeft.strikes}/3</Label>
+          <div>
+            <Label>Kontrol Tim Kiri - Strike: {gameState.teamLeft.strikes[gameState.round] || 0}/3</Label>
               <div className="flex gap-2 mt-2">
                 <Button
                   variant="destructive"
                   onClick={() => addStrike('left')}
-                  disabled={gameState.teamLeft.strikes >= 3}
+                  disabled={(gameState.teamLeft.strikes[gameState.round] || 0) >= 3}
                 >
                   Tambah Strike
                 </Button>
@@ -194,12 +194,12 @@ export const GameControlTab = ({
             </div>
 
             <div>
-              <Label>Kontrol Tim Kanan - Strike: {gameState.teamRight.strikes}/3</Label>
+              <Label>Kontrol Tim Kanan - Strike: {gameState.teamRight.strikes[gameState.round] || 0}/3</Label>
               <div className="flex gap-2 mt-2">
                 <Button
                   variant="destructive"
                   onClick={() => addStrike('right')}
-                  disabled={gameState.teamRight.strikes >= 3}
+                  disabled={(gameState.teamRight.strikes[gameState.round] || 0) >= 3}
                 >
                   Tambah Strike
                 </Button>

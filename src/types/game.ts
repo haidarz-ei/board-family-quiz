@@ -1,7 +1,7 @@
 export interface Team {
   name: string;
   score: number;
-  strikes: number;
+  strikes: { [round: number]: number };
 }
 
 export interface Answer {
