@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_devices: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          device_name: string | null
+          device_type: string | null
+          id: string
+          last_accessed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          device_name?: string | null
+          device_type?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          device_name?: string | null
+          device_type?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
@@ -85,6 +115,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_add_device: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       check_device_limit: {
         Args: { p_device_id: string; p_user_id: string }
         Returns: Json

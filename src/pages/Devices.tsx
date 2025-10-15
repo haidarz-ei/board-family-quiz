@@ -57,11 +57,11 @@ const Devices = () => {
     }
   };
 
-  const getDeviceIcon = (deviceInfo: any) => {
-    if (!deviceInfo) return <Monitor className="h-5 w-5" />;
-    
-    const userAgent = deviceInfo.userAgent?.toLowerCase() || '';
-    if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
+  const getDeviceIcon = (deviceType: string | null) => {
+    if (deviceType === 'mobile') {
+      return <Smartphone className="h-5 w-5" />;
+    }
+    if (deviceType === 'tablet') {
       return <Smartphone className="h-5 w-5" />;
     }
     return <Monitor className="h-5 w-5" />;
@@ -134,7 +134,7 @@ const Devices = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="text-primary">
-                          {getDeviceIcon(device.device_info)}
+                          {getDeviceIcon(device.device_type)}
                         </div>
                         <div>
                           <div className="font-medium flex items-center gap-2">
@@ -146,7 +146,7 @@ const Devices = () => {
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Terakhir aktif: {formatDate(device.last_active)}
+                            Terakhir aktif: {formatDate(device.last_accessed_at)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Terdaftar: {formatDate(device.created_at)}

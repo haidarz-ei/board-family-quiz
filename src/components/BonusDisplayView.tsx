@@ -1,11 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRevealSound } from "../hooks/useRevealSound";
 import { GameState, Answer } from "../types/game";
 
 export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
   const { playRevealSound, playWrongAnswerSound } = useRevealSound();
   const prevRevealedRef = useRef<string[]>([]);
-  const prevStrikesRef = useRef({ left: 0, right: 0 });
+  const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({ left: {}, right: {} });
+  const [audioEnabled, setAudioEnabled] = useState(true);
   
   const currentRoundAnswers = gameState.answers[gameState.round] || [];
   const answerCount = 10; // Fixed for bonus round
@@ -16,38 +17,46 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
 
   // Check for newly revealed answers and strikes
   useEffect(() => {
+    // Skip if audio is not enabled
+    if (!audioEnabled) return;
+
     const currentRevealed = currentRoundAnswers
       .filter((answer: Answer) => answer.revealed)
       .map((answer: Answer) => `${gameState.round}-${answer.text}`);
-    
+
     const newRevealed = currentRevealed.filter(
       (id: string) => !prevRevealedRef.current.includes(id)
     );
-    
+
     // Play sound for each newly revealed answer
     for (const revealedId of newRevealed) {
-      const answer = currentRoundAnswers.find((a: Answer) => 
+      const answer = currentRoundAnswers.find((a: Answer) =>
         a.revealed && `${gameState.round}-${a.text}` === revealedId
       );
       if (answer) {
         playRevealSound(answer.points, currentRoundAnswers);
       }
     }
-    
+
     // Check for strikes increase and play wrong answer sound
-    const leftStrikesIncreased = gameState.teamLeft.strikes > prevStrikesRef.current.left;
-    const rightStrikesIncreased = gameState.teamRight.strikes > prevStrikesRef.current.right;
-    
+    const currentLeftStrikes = gameState.teamLeft.strikes[gameState.round] || 0;
+    const currentRightStrikes = gameState.teamRight.strikes[gameState.round] || 0;
+    const prevLeftStrikes = prevStrikesRef.current.left[gameState.round] || 0;
+    const prevRightStrikes = prevStrikesRef.current.right[gameState.round] || 0;
+
+    const leftStrikesIncreased = currentLeftStrikes > prevLeftStrikes;
+    const rightStrikesIncreased = currentRightStrikes > prevRightStrikes;
+
     if (leftStrikesIncreased || rightStrikesIncreased) {
       playWrongAnswerSound();
     }
-    
+
     prevRevealedRef.current = currentRevealed;
     prevStrikesRef.current = {
-      left: gameState.teamLeft.strikes,
-      right: gameState.teamRight.strikes
+      left: { ...gameState.teamLeft.strikes },
+      right: { ...gameState.teamRight.strikes }
     };
-  }, [gameState.answers, gameState.round, gameState.teamLeft.strikes, gameState.teamRight.strikes, currentRoundAnswers, playRevealSound, playWrongAnswerSound]);
+  }, [gameState.answers, gameState.round, gameState.teamLeft.strikes, gameState.teamRight.strikes, currentRoundAnswers, playRevealSound, playWrongAnswerSound, audioEnabled]);
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden font-sans relative">
@@ -75,10 +84,10 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
               </div>
             </div>
 
-            {gameState.teamLeft.strikes > 0 && (
+            {(gameState.teamLeft.strikes[gameState.round] || 0) > 0 && (
               <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
                 {[1, 2, 3].map((num) =>
-                  gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
+                  (gameState.teamLeft.strikes[gameState.round] || 0) >= num ? <span key={num}>❌</span> : null
                 )}
               </div>
             )}
@@ -164,10 +173,10 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
               </div>
             </div>
 
-            {gameState.teamRight.strikes > 0 && (
+            {(gameState.teamRight.strikes[gameState.round] || 0) > 0 && (
               <div className="strikes mt-2.5 flex flex-col gap-2 text-5xl text-red-500">
                 {[1, 2, 3].map((num) =>
-                  gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
+                  (gameState.teamRight.strikes[gameState.round] || 0) >= num ? <span key={num}>❌</span> : null
                 )}
               </div>
             )}

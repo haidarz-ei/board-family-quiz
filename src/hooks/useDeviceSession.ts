@@ -6,8 +6,8 @@ interface DeviceSession {
   id: string;
   device_id: string;
   device_name: string | null;
-  device_info: unknown;
-  last_active: string;
+  device_type: string | null;
+  last_accessed_at: string;
   created_at: string;
 }
 
@@ -26,14 +26,16 @@ export const useDeviceSession = () => {
     return deviceId;
   };
 
-  // Get device info
-  const getDeviceInfo = () => {
-    return {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      language: navigator.language,
-      screenResolution: `${window.screen.width}x${window.screen.height}`
-    };
+  // Get device type
+  const getDeviceType = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
+      return 'mobile';
+    }
+    if (userAgent.includes('tablet') || userAgent.includes('ipad')) {
+      return 'tablet';
+    }
+    return 'desktop';
   };
 
   // Register current device session
@@ -41,22 +43,37 @@ export const useDeviceSession = () => {
     if (!user) return null;
 
     const deviceId = getDeviceId();
-    const deviceInfo = getDeviceInfo();
+    const deviceType = getDeviceType();
     const deviceName = `${navigator.platform} - ${new Date().toLocaleDateString('id-ID')}`;
 
-    const { data, error } = await supabase.rpc('register_device_session', {
-      p_user_id: user.id,
-      p_device_id: deviceId,
-      p_device_name: deviceName,
-      p_device_info: deviceInfo
+    // Check if can add device
+    const { data: canAdd } = await supabase.rpc('can_add_device', {
+      p_user_id: user.id
     });
+
+    if (!canAdd) {
+      return { success: false, error: 'Device limit reached' };
+    }
+
+    // Insert or update device
+    const { error } = await supabase
+      .from('user_devices')
+      .upsert({
+        user_id: user.id,
+        device_id: deviceId,
+        device_name: deviceName,
+        device_type: deviceType,
+      }, {
+        onConflict: 'user_id,device_id'
+      });
 
     if (error) {
       console.error('Error registering device:', error);
       return { success: false, error };
     }
 
-    return data;
+    await fetchDevices();
+    return { success: true };
   };
 
   // Fetch all devices for current user
@@ -69,10 +86,10 @@ export const useDeviceSession = () => {
 
     setLoading(true);
     const { data, error } = await supabase
-      .from('device_sessions')
+      .from('user_devices')
       .select('*')
       .eq('user_id', user.id)
-      .order('last_active', { ascending: false });
+      .order('last_accessed_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching devices:', error);
@@ -87,7 +104,7 @@ export const useDeviceSession = () => {
     if (!user) return;
 
     const { error } = await supabase
-      .from('device_sessions')
+      .from('user_devices')
       .delete()
       .eq('user_id', user.id)
       .eq('device_id', deviceId);
@@ -105,10 +122,8 @@ export const useDeviceSession = () => {
   const checkDeviceLimit = async () => {
     if (!user) return null;
 
-    const deviceId = getDeviceId();
-    const { data, error } = await supabase.rpc('check_device_limit', {
-      p_user_id: user.id,
-      p_device_id: deviceId
+    const { data, error } = await supabase.rpc('can_add_device', {
+      p_user_id: user.id
     });
 
     if (error) {
