@@ -6,7 +6,7 @@ import { database, ref, onValue } from "../firebase";
 interface Team {
   name: string;
   score: number;
-  strikes: number;
+  strikes: { [round: number]: number };
 }
 
 interface Answer {
@@ -29,7 +29,10 @@ interface GameState {
 export const DisplayView = () => {
   const { playRevealSound, playWrongAnswerSound } = useRevealSound();
   const prevRevealedRef = useRef<string[]>([]);
-  const prevStrikesRef = useRef({ left: 0, right: 0 });
+  const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({ 
+    left: {}, 
+    right: {} 
+  });
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
@@ -40,8 +43,8 @@ export const DisplayView = () => {
       4: [],
       5: []
     },
-    teamLeft: { name: "TIM A", score: 0, strikes: 0 },
-    teamRight: { name: "TIM B", score: 0, strikes: 0 },
+    teamLeft: { name: "TIM A", score: 0, strikes: {} },
+    teamRight: { name: "TIM B", score: 0, strikes: {} },
     totalScore: 0,
     round: 1,
     currentPlayingTeam: null,
@@ -73,8 +76,9 @@ export const DisplayView = () => {
       }
 
       // Check for strikes increase and play wrong answer sound
-      const leftStrikesIncreased = newState.teamLeft.strikes > prevStrikesRef.current.left;
-      const rightStrikesIncreased = newState.teamRight.strikes > prevStrikesRef.current.right;
+      const currentRound = newState.round;
+      const leftStrikesIncreased = (newState.teamLeft.strikes[currentRound] || 0) > (prevStrikesRef.current.left[currentRound] || 0);
+      const rightStrikesIncreased = (newState.teamRight.strikes[currentRound] || 0) > (prevStrikesRef.current.right[currentRound] || 0);
 
       if (leftStrikesIncreased || rightStrikesIncreased) {
         playWrongAnswerSound();
@@ -119,8 +123,8 @@ export const DisplayView = () => {
             4: [],
             5: []
           },
-          teamLeft: { name: "TIM A", score: 0, strikes: 0 },
-          teamRight: { name: "TIM B", score: 0, strikes: 0 },
+          teamLeft: { name: "TIM A", score: 0, strikes: {} },
+          teamRight: { name: "TIM B", score: 0, strikes: {} },
           totalScore: 0,
           round: 1,
           currentPlayingTeam: null,
@@ -212,10 +216,10 @@ export const DisplayView = () => {
             </div>
           </div>
 
-          {gameState.teamLeft.strikes > 0 && (
+          {(gameState.teamLeft.strikes[gameState.round] || 0) > 0 && (
             <div className="strikes mt-2.5 flex flex-col gap-2 text-4xl text-red-500">
               {[1, 2, 3].map((num) =>
-                gameState.teamLeft.strikes >= num ? <span key={num}>❌</span> : null
+                (gameState.teamLeft.strikes[gameState.round] || 0) >= num ? <span key={num}>❌</span> : null
               )}
             </div>
           )}
@@ -268,10 +272,10 @@ export const DisplayView = () => {
             </div>
           </div>
 
-          {gameState.teamRight.strikes > 0 && (
+          {(gameState.teamRight.strikes[gameState.round] || 0) > 0 && (
             <div className="strikes mt-2.5 flex flex-col gap-2 text-4xl text-red-500">
               {[1, 2, 3].map((num) =>
-                gameState.teamRight.strikes >= num ? <span key={num}>❌</span> : null
+                (gameState.teamRight.strikes[gameState.round] || 0) >= num ? <span key={num}>❌</span> : null
               )}
             </div>
           )}
