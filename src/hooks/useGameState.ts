@@ -441,6 +441,9 @@ export const useGameState = () => {
 
     saveGameState(updatedState);
 
+    // Play audio for round points
+    playAudioOnDisplay('round_points');
+
     toast({
       title: `Poin babak diberikan ke Tim ${team === 'left' ? 'Kiri' : 'Kanan'}!`,
       description: `+${gameState.totalScore} poin`

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { BonusDisplayView } from "./BonusDisplayView";
 import { useRevealSound } from "../hooks/useRevealSound";
-import { database, ref, onValue } from "../firebase";
+import { useAudioSettings } from "../hooks/useAudioSettings";
+import { database, ref, onValue, set } from "../firebase";
 
 interface Team {
   name: string;
@@ -28,12 +29,14 @@ interface GameState {
 
 export const DisplayView = () => {
   const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const { getAudioUrl } = useAudioSettings();
   const prevRevealedRef = useRef<string[]>([]);
-  const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({ 
-    left: {}, 
-    right: {} 
+  const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({
+    left: {},
+    right: {}
   });
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioCommandRef = useRef<string | null>(null);
   const [gameState, setGameState] = useState<GameState>({
     questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
     answers: {
@@ -50,6 +53,27 @@ export const DisplayView = () => {
     currentPlayingTeam: null,
     showQuestion: { 1: false, 2: false, 3: false, 4: false, 5: false }
   });
+
+  // Listen for audio commands from Firebase
+  useEffect(() => {
+    const audioCommandRef = ref(database, 'family100-audio-command');
+    const unsubscribeAudio = onValue(audioCommandRef, (snapshot) => {
+      const command = snapshot.val();
+      if (command && command.audioType && audioEnabled) {
+        const audioUrl = getAudioUrl(command.audioType);
+        if (audioUrl) {
+          const audio = new Audio(audioUrl);
+          audio.play().catch(console.error);
+          // Clear the audio command after playing to prevent continuous playback
+          set(ref(database, 'family100-audio-command'), null);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribeAudio();
+    };
+  }, [getAudioUrl, audioEnabled]);
 
   // Listen for updates from Firebase real-time database and localStorage
   useEffect(() => {
