@@ -37,6 +37,7 @@ export const DisplayView = () => {
   });
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioCommandRef = useRef<string | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const [gameState, setGameState] = useState<GameState>({
     questions: { 1: "", 2: "", 3: "", 4: "", 5: "" },
     answers: {
@@ -60,9 +61,27 @@ export const DisplayView = () => {
     const unsubscribeAudio = onValue(audioCommandRef, (snapshot) => {
       const command = snapshot.val();
       if (command && command.audioType && audioEnabled) {
+        // Handle free music stop command
+        if (command.audioType === 'free_music_stop') {
+          // Stop any currently playing free music
+          if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current = null;
+          }
+          set(ref(database, 'family100-audio-command'), null);
+          return;
+        }
+
         const audioUrl = getAudioUrl(command.audioType);
         if (audioUrl) {
+          // Stop any currently playing free music before playing new one
+          if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current = null;
+          }
+
           const audio = new Audio(audioUrl);
+          currentAudioRef.current = audio;
           audio.play().catch(console.error);
           // Clear the audio command after playing to prevent continuous playback
           set(ref(database, 'family100-audio-command'), null);

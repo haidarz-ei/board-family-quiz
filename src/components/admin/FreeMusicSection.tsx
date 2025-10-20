@@ -50,26 +50,15 @@ export const FreeMusicSection = () => {
 
   const playMusic = (url: string, musicId: string) => {
     if (playingMusic === musicId) {
-      // Stop music
+      // Stop music - send stop command to display
+      playAudioOnDisplay(`free_music_stop`);
       audioRef.current?.pause();
       audioRef.current = null;
       setPlayingMusic(null);
     } else {
-      // Play music on display screens via Firebase
+      // Play music only on display screens via Firebase
       playAudioOnDisplay(`free_music_${musicId}`);
-
-      // Also play locally for preview
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      const audio = new Audio(url);
-      audio.play();
-      audioRef.current = audio;
       setPlayingMusic(musicId);
-      audio.onended = () => {
-        setPlayingMusic(null);
-        audioRef.current = null;
-      };
     }
   };
 

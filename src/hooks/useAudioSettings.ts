@@ -18,13 +18,34 @@ export const useAudioSettings = () => {
   // Fetch audio settings
   const fetchAudioSettings = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch regular audio settings
+      const { data: audioData, error: audioError } = await supabase
         .from('audio_settings')
         .select('*')
         .order('audio_type');
 
-      if (error) throw error;
-      setAudioSettings(data || []);
+      if (audioError) throw audioError;
+
+      // Fetch free music
+      const { data: freeMusicData, error: freeMusicError } = await supabase
+        .from('free_music')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (freeMusicError) throw freeMusicError;
+
+      // Combine both
+      const combinedSettings: AudioSetting[] = [
+        ...(audioData || []),
+        ...(freeMusicData || []).map(music => ({
+          id: music.id,
+          audio_type: `free_music_${music.id}`,
+          audio_url: music.audio_url,
+          file_name: music.file_name,
+        }))
+      ];
+
+      setAudioSettings(combinedSettings);
     } catch (error) {
       console.error('Error fetching audio settings:', error);
       toast({
