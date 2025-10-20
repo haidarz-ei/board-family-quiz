@@ -7,11 +7,12 @@ import { GameControlTab } from "@/components/admin/GameControlTab";
 import { AnswersManagementTab } from "@/components/admin/AnswersManagementTab";
 import { TeamsManagementTab } from "@/components/admin/TeamsManagementTab";
 import { AudioSettingsTab } from "@/components/admin/AudioSettingsTab";
+import { FreeMusicSection } from "@/components/admin/FreeMusicSection";
 import { Settings } from "lucide-react";
 
 export const AdminPanel = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"game" | "answers" | "teams" | "audio">("game");
+  const [activeTab, setActiveTab] = useState<"game" | "answers" | "teams" | "audio" | "music">("game");
 
   const {
     gameState,
@@ -60,12 +61,13 @@ export const AdminPanel = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "game" | "answers" | "teams" | "audio")} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "game" | "answers" | "teams" | "audio" | "music")} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="game">Game Control</TabsTrigger>
             <TabsTrigger value="answers">Kelola Jawaban</TabsTrigger>
             <TabsTrigger value="teams">Tim & Skor</TabsTrigger>
             <TabsTrigger value="audio">Pengaturan Audio</TabsTrigger>
+            <TabsTrigger value="music">Musik Bebas</TabsTrigger>
           </TabsList>
 
           {/* Game Control Tab */}
@@ -117,6 +119,11 @@ export const AdminPanel = () => {
           {/* Audio Settings Tab */}
           <TabsContent value="audio" className="space-y-6">
             <AudioSettingsTab />
+          </TabsContent>
+
+          {/* Free Music Tab */}
+          <TabsContent value="music" className="space-y-6">
+            <FreeMusicSection />
           </TabsContent>
         </Tabs>
       </div>
