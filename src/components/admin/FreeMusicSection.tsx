@@ -62,7 +62,7 @@ export const FreeMusicSection = () => {
     }
   };
 
-  const handleEditName = (music: any) => {
+  const handleEditName = (music: { id: string; name: string }) => {
     setEditingMusic({ id: music.id, name: music.name });
     setEditName(music.name);
   };
@@ -75,7 +75,7 @@ export const FreeMusicSection = () => {
     }
   };
 
-  const handleDelete = (music: any) => {
+  const handleDelete = (music: { id: string; name: string; file_name: string }) => {
     if (confirm(`Apakah Anda yakin ingin menghapus musik "${music.name}"?`)) {
       deleteMusic(music.id, music.file_name);
     }

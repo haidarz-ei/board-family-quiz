@@ -107,14 +107,14 @@ export const AnswersManagementTab = ({
         <CardContent>
           {selectedRoundForAnswers === 5 ? (
             <div className="space-y-8">
-              {[5, 6, 7, 8, 9].map((questionRound) => (
-                <div key={questionRound} className="border rounded-lg p-4">
+              {[1, 2].map((questionNumber) => (
+                <div key={questionNumber} className="border rounded-lg p-4">
                   <h3 className="text-center font-bold text-lg mb-4 text-yellow-800">
-                    Pertanyaan {questionRound - 4}
+                    Pertanyaan {questionNumber}
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-5 gap-4">
                     {new Array(5).fill(null).map((_, index) => {
-                      const answerIndex = (questionRound - 5) * 5 + index;
+                      const answerIndex = (questionNumber - 1) * 5 + index;
                       const answer = selectedRoundAnswers[answerIndex];
                       if (answer) {
                         return (

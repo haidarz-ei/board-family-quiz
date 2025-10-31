@@ -41,7 +41,7 @@ const Devices = () => {
     if (!deviceToRemove) return;
 
     const result = await removeDevice(deviceToRemove);
-    
+
     if (result?.success) {
       toast({
         title: 'Perangkat dihapus',

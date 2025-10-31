@@ -28,8 +28,13 @@ interface GameState {
 }
 
 export const DisplayView = () => {
-  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const { playRevealSound, playWrongAnswerSound, stopRevealSound, stopWrongAnswerSound } = useRevealSound();
   const { getAudioUrl } = useAudioSettings();
+
+  // Make stopRevealSound available globally for admin panel
+  if (typeof window !== 'undefined') {
+    window.stopRevealSound = stopRevealSound;
+  }
   const prevRevealedRef = useRef<string[]>([]);
   const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({
     left: {},
@@ -99,7 +104,7 @@ export const DisplayView = () => {
     const handleStateUpdate = (newState: GameState) => {
       // Check for newly revealed answers
       const currentAnswers = newState.answers[newState.round] || [];
-      const validAnswers = currentAnswers.filter((answer): answer is Answer => answer !== null);
+      const validAnswers = currentAnswers.filter((answer: Answer | null): answer is Answer => answer !== null);
       const currentRevealed = validAnswers
         .filter((answer: Answer) => answer.revealed)
         .map((answer: Answer) => `${newState.round}-${answer.text}`);
@@ -107,6 +112,15 @@ export const DisplayView = () => {
       const newRevealed = currentRevealed.filter(
         (id: string) => !prevRevealedRef.current.includes(id)
       );
+
+      const newlyHidden = prevRevealedRef.current.filter(
+        (id: string) => !currentRevealed.includes(id)
+      );
+
+      // Stop sound if any answers were hidden
+      if (newlyHidden.length > 0) {
+        stopRevealSound();
+      }
 
       // Play sound for each newly revealed answer
       for (const revealedId of newRevealed) {

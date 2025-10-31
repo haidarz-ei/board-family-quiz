@@ -3,7 +3,13 @@ import { useRevealSound } from "../hooks/useRevealSound";
 import { GameState, Answer } from "../types/game";
 
 export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
-  const { playRevealSound, playWrongAnswerSound } = useRevealSound();
+  const { playRevealSound, playWrongAnswerSound, stopRevealSound, stopWrongAnswerSound } = useRevealSound();
+
+  // Make stopRevealSound available globally for admin panel
+  if (typeof window !== 'undefined') {
+    window.stopRevealSound = stopRevealSound;
+  }
+
   const prevRevealedRef = useRef<string[]>([]);
   const prevStrikesRef = useRef<{ left: { [round: number]: number }, right: { [round: number]: number } }>({ left: {}, right: {} });
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -20,7 +26,8 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
     // Skip if audio is not enabled
     if (!audioEnabled) return;
 
-    const currentRevealed = currentRoundAnswers
+    const validAnswers = currentRoundAnswers.filter((answer: Answer | null): answer is Answer => answer !== null);
+    const currentRevealed = validAnswers
       .filter((answer: Answer) => answer.revealed)
       .map((answer: Answer) => `${gameState.round}-${answer.text}`);
 
@@ -28,13 +35,22 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
       (id: string) => !prevRevealedRef.current.includes(id)
     );
 
+    const newlyHidden = prevRevealedRef.current.filter(
+      (id: string) => !currentRevealed.includes(id)
+    );
+
+    // Stop sound if any answers were hidden
+    if (newlyHidden.length > 0) {
+      stopRevealSound();
+    }
+
     // Play sound for each newly revealed answer
     for (const revealedId of newRevealed) {
-      const answer = currentRoundAnswers.find((a: Answer) =>
+      const answer = validAnswers.find((a: Answer) =>
         a.revealed && `${gameState.round}-${a.text}` === revealedId
       );
       if (answer) {
-        playRevealSound(answer.points, currentRoundAnswers);
+        playRevealSound(answer.points, validAnswers);
       }
     }
 
@@ -98,9 +114,9 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
         <div className="board-wrapper flex flex-col items-center gap-5" style={{marginTop: '20px'}}>
           <div className="board p-4 min-w-[800px] relative">
             <div className="flex justify-between items-start gap-8 w-full relative">
-              {/* Left Column - Person 1 (Answers 1-5) */}
+              {/* Left Column - Question 1 (Answers 0-4) */}
               <div className="flex-1 space-y-2">
-                <h3 className="text-center font-bold text-lg mb-2 text-yellow-800">Orang Pertama</h3>
+                <h3 className="text-center font-bold text-lg mb-2 text-yellow-800">Pertanyaan 1</h3>
                 <ul className="answers list-none p-0 m-0">
                   {displayAnswers.slice(0, 5).map((answer, index) => (
                     <li key={index} className="answer-wrap bg-white p-0.5 rounded-[20px] my-2 shadow-md">
@@ -124,15 +140,15 @@ export const BonusDisplayView = ({ gameState }: { gameState: GameState }) => {
                 </ul>
               </div>
 
-              {/* Right Column - Person 2 (Answers 6-10) */}
+              {/* Right Column - Question 2 (Answers 5-9) */}
               <div className="flex-1 space-y-2">
-                <h3 className="text-center font-bold text-lg mb-2 text-yellow-800">Orang Kedua</h3>
+                <h3 className="text-center font-bold text-lg mb-2 text-yellow-800">Pertanyaan 2</h3>
                 <ul className="answers list-none p-0 m-0">
                   {displayAnswers.slice(5, 10).map((answer, index) => (
                     <li key={index + 5} className="answer-wrap bg-white p-0.5 rounded-[20px] my-2 shadow-md">
                       <div className="answer-row grid grid-cols-[49px_1fr_90px] gap-px">
                         <div className="number bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px]">
-                          {index + 6}
+                          {index + 1}
                         </div>
                         <div className={`text bg-[#024694] text-white px-3 py-2.5 font-bold text-xl text-center rounded-[20px] transition-all duration-500 ${
                           answer.revealed ? 'bg-yellow-400 text-blue-900' : ''

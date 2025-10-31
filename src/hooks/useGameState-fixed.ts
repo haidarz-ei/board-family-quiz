@@ -3,12 +3,6 @@ import { database, ref, set, onValue } from "../firebase";
 import { GameState, Answer, Team } from "../types/game";
 import { useToast } from "./use-toast";
 
-declare global {
-  interface Window {
-    stopRevealSound?: () => void;
-  }
-}
-
 export const useGameState = () => {
   const { toast } = useToast();
   const bcRef = useRef<BroadcastChannel | null>(null);
@@ -55,49 +49,26 @@ export const useGameState = () => {
       const firebaseData = snapshot.val();
       if (firebaseData) {
         console.log('useGameState: Received update from Firebase:', firebaseData);
-        // Helper to convert Firebase data to array, handling sparse arrays stored as objects
-        const convertToArray = (data: any) => {
-          if (Array.isArray(data)) {
-            return data.map(a => a === undefined ? null : a);
-          } else if (data && typeof data === 'object') {
-            const keys = Object.keys(data).map(k => parseInt(k)).filter(k => !isNaN(k));
-            if (keys.length === 0) return [];
-            const maxIndex = Math.max(...keys);
-            const arr = new Array(maxIndex + 1).fill(null);
-            for (const [k, v] of Object.entries(data)) {
-              const index = parseInt(k);
-              if (!isNaN(index)) {
-                arr[index] = v === undefined ? null : v;
-              }
+        // Only update if the data is different from current state
+        if (JSON.stringify(firebaseData) !== JSON.stringify(gameState)) {
+          // Ensure answers structure is complete and arrays
+          const processedData = {
+            ...firebaseData,
+            answers: {
+              1: Array.isArray(firebaseData.answers?.[1]) ? firebaseData.answers[1] : [],
+              2: Array.isArray(firebaseData.answers?.[2]) ? firebaseData.answers[2] : [],
+              3: Array.isArray(firebaseData.answers?.[3]) ? firebaseData.answers[3] : [],
+              4: Array.isArray(firebaseData.answers?.[4]) ? firebaseData.answers[4] : [],
+              5: Array.isArray(firebaseData.answers?.[5]) ? firebaseData.answers[5] : []
             }
-            return arr;
-          } else {
-            return [];
+          };
+          setGameState(processedData);
+          // Also update localStorage to keep it in sync
+          try {
+            localStorage.setItem('family100-game-state', JSON.stringify(processedData));
+          } catch (e) {
+            console.error('useGameState: Failed to update localStorage from Firebase', e);
           }
-        };
-        // Ensure answers structure is complete and arrays, mapping undefined to null
-        const processedData = {
-          ...firebaseData,
-          answers: {
-            1: convertToArray(firebaseData.answers?.[1]),
-            2: convertToArray(firebaseData.answers?.[2]),
-            3: convertToArray(firebaseData.answers?.[3]),
-            4: convertToArray(firebaseData.answers?.[4]),
-            5: convertToArray(firebaseData.answers?.[5])
-          }
-        };
-        // Only update if the data is different from current state to prevent unnecessary re-renders
-        setGameState(currentState => {
-          if (JSON.stringify(currentState) !== JSON.stringify(processedData)) {
-            return processedData;
-          }
-          return currentState;
-        });
-        // Also update localStorage to keep it in sync
-        try {
-          localStorage.setItem('family100-game-state', JSON.stringify(processedData));
-        } catch (e) {
-          console.error('useGameState: Failed to update localStorage from Firebase', e);
         }
       }
     });
@@ -105,7 +76,7 @@ export const useGameState = () => {
     return () => {
       unsubscribe();
     };
-  }, []); // Removed gameState from dependencies to prevent infinite loop
+  }, [gameState]);
 
   // Load saved state
   useEffect(() => {
@@ -213,20 +184,9 @@ export const useGameState = () => {
     } catch (e) {
       console.warn('useGameState: BroadcastChannel post failed', e);
     }
-    // Clean answers arrays to replace undefined values with null before saving to Firebase
-    const cleanedState = {
-      ...newState,
-      answers: {
-        1: newState.answers[1]?.map(a => a === undefined ? null : a) || [],
-        2: newState.answers[2]?.map(a => a === undefined ? null : a) || [],
-        3: newState.answers[3]?.map(a => a === undefined ? null : a) || [],
-        4: newState.answers[4]?.map(a => a === undefined ? null : a) || [],
-        5: newState.answers[5]?.map(a => a === undefined ? null : a) || []
-      }
-    };
     // Save to Firebase for real-time sync across devices
     try {
-      await set(ref(database, 'family100-game-state'), cleanedState);
+      await set(ref(database, 'family100-game-state'), newState);
       console.log('useGameState: State saved to Firebase successfully');
     } catch (e) {
       console.error('useGameState: Firebase save failed', e);
@@ -253,21 +213,28 @@ export const useGameState = () => {
         }
         arr[targetIndex] = newAnswerObj;
       } else {
-        // Always append to preserve insertion order for all rounds
-        arr.push(newAnswerObj);
+        // Find first empty slot
+        const firstEmptyIndex = arr.findIndex(a => a === null);
+        if (firstEmptyIndex !== -1) {
+          arr[firstEmptyIndex] = newAnswerObj;
+        } else {
+          // Append if no empty slots
+          arr.push(newAnswerObj);
+        }
       }
 
-      // Keep insertion order for all rounds - sorting only happens when points are updated
-      updatedAnswers[round] = arr;
+      // Sort answers by points (highest first), keeping nulls at the end
+      const validAnswers = arr.filter(a => a !== null);
+      const sortedAnswers = validAnswers.sort((a, b) => b.points - a.points);
+      const nullCount = arr.length - validAnswers.length;
+      const nullArray = new Array(nullCount).fill(null);
+
+      updatedAnswers[round] = [...sortedAnswers, ...nullArray];
 
       saveGameState({ ...gameState, answers: updatedAnswers });
       setNewAnswer({ text: "", points: 0 });
       setTargetIndex(null);
-      if (targetIndex !== null) {
-        toast({ title: "Jawaban diperbarui!" });
-      } else {
-        toast({ title: "Jawaban ditambahkan!" });
-      }
+      toast({ title: `Jawaban ditambahkan dan diurutkan berdasarkan poin!` });
     } else {
       toast({ title: "Masukkan jawaban terlebih dahulu!" });
     }
@@ -279,15 +246,14 @@ export const useGameState = () => {
     if (arr[index]) {
       arr[index] = { ...arr[index], [field]: value } as Answer;
 
-      // For bonus round (round 5), don't sort - keep insertion order
-      if (round !== 5 && field === 'points') {
+      // If points were updated, re-sort answers by points (highest first)
+      if (field === 'points') {
         const validAnswers = arr.filter(a => a !== null);
         const sortedAnswers = validAnswers.sort((a, b) => b.points - a.points);
         const nullCount = arr.length - validAnswers.length;
         const nullArray = new Array(nullCount).fill(null);
         updatedAnswers[round] = [...sortedAnswers, ...nullArray];
       } else {
-        // For bonus round or other fields, keep the array as is (insertion order)
         updatedAnswers[round] = arr;
       }
 
@@ -295,40 +261,14 @@ export const useGameState = () => {
     }
   };
 
-  const deleteAnswer = (index: number, round?: number) => {
-    const roundToUse = round ?? selectedRoundForAnswers;
+  const deleteAnswer = (index: number, round: number = selectedRoundForAnswers) => {
     const updatedAnswers = { ...gameState.answers };
-    const arr = [...(updatedAnswers[roundToUse] || [])];
-
-    if (roundToUse === 5) {
-      // For bonus round, set to null to avoid shifting other questions' answers
-      if (index < arr.length && arr[index] !== null) {
-        arr[index] = null;
-        updatedAnswers[roundToUse] = arr;
-        saveGameState({ ...gameState, answers: updatedAnswers });
-        const questionNum = Math.floor(index / 5) + 1;
-        const positionInQuestion = (index % 5) + 1;
-        toast({ title: `Jawaban dihapus dari pertanyaan ${questionNum}, posisi ${positionInQuestion}!` });
-      }
-    } else {
-      // For regular rounds (1-4), delete by position in sorted list
-      const nonNullAnswers = arr.filter(a => a !== null);
-      if (index < nonNullAnswers.length) {
-        // Find the actual index in the array
-        let count = 0;
-        for (let i = 0; i < arr.length; i++) {
-          if (arr[i] !== null) {
-            if (count === index) {
-              arr.splice(i, 1);
-              break;
-            }
-            count++;
-          }
-        }
-        updatedAnswers[roundToUse] = arr;
-        saveGameState({ ...gameState, answers: updatedAnswers });
-        toast({ title: `Jawaban dihapus dari posisi ${index + 1} babak ${roundToUse}!` });
-      }
+    const arr = [...(updatedAnswers[round] || [])];
+    if (index < arr.length) {
+      arr[index] = null;
+      updatedAnswers[round] = arr;
+      saveGameState({ ...gameState, answers: updatedAnswers });
+      toast({ title: `Jawaban dihapus dari posisi ${index + 1} babak ${round}!` });
     }
   };
 
@@ -339,25 +279,22 @@ export const useGameState = () => {
     // Update answer revealed status and total score in one state update
     const updatedAnswers = { ...gameState.answers };
     const arr = [...(updatedAnswers[round] || [])];
-    if (index >= 0 && index < arr.length && arr[index] !== null) {
+    if (arr[index]) {
       arr[index] = { ...arr[index], revealed: true } as Answer;
       updatedAnswers[round] = arr;
 
       // Calculate new total score
       const currentRoundAnswers = updatedAnswers[round] || [];
       const total = currentRoundAnswers
-        .filter(answer => answer != null && answer.revealed)
+        .filter((answer): answer is Answer => answer !== null && answer.revealed)
         .reduce((sum, answer) => sum + answer.points, 0);
 
       const newState = { ...gameState, answers: updatedAnswers, totalScore: total };
       saveGameState(newState);
-
-      console.log('useGameState: Answer revealed and total score updated');
-      toast({ title: `Jawaban ${index + 1} diungkap!` });
-    } else {
-      console.log('useGameState: Cannot reveal answer - invalid index or null answer');
-      toast({ title: `Tidak dapat mengungkap jawaban ${index + 1} - jawaban tidak ada` });
     }
+
+    console.log('useGameState: Answer revealed and total score updated');
+    toast({ title: `Jawaban ${index + 1} diungkap!` });
   };
 
   const hideAnswer = (index: number, round: number = gameState.round) => {
@@ -366,29 +303,29 @@ export const useGameState = () => {
     // Update answer revealed status and total score in one state update
     const updatedAnswers = { ...gameState.answers };
     const arr = [...(updatedAnswers[round] || [])];
-    if (index >= 0 && index < arr.length && arr[index] !== null) {
+    if (arr[index]) {
       arr[index] = { ...arr[index], revealed: false } as Answer;
       updatedAnswers[round] = arr;
 
       // Calculate new total score
       const currentRoundAnswers = updatedAnswers[round] || [];
       const total = currentRoundAnswers
-        .filter(answer => answer != null && answer.revealed)
+        .filter((answer): answer is Answer => answer !== null && answer.revealed)
         .reduce((sum, answer) => sum + answer.points, 0);
 
       const newState = { ...gameState, answers: updatedAnswers, totalScore: total };
       saveGameState(newState);
-
-      // Stop any reveal sound when hiding an answer
-      if (typeof window !== 'undefined' && window.stopRevealSound) {
-        window.stopRevealSound();
-      }
-
-      toast({ title: `Jawaban ${index + 1} disembunyikan!` });
-    } else {
-      console.log('useGameState: Cannot hide answer - invalid index or null answer');
-      toast({ title: `Tidak dapat menyembunyikan jawaban ${index + 1} - jawaban tidak ada` });
     }
+
+    // Clear any pending audio commands to prevent unwanted sounds
+    try {
+      set(ref(database, 'family100-audio-command'), null);
+      console.log('useGameState: Cleared audio command after hiding answer');
+    } catch (e) {
+      console.error('useGameState: Failed to clear audio command', e);
+    }
+
+    toast({ title: `Jawaban ${index + 1} disembunyikan!` });
   };
 
   const updateTeam = (side: 'left' | 'right', field: keyof Team, value: string | number | { [round: number]: number }) => {
@@ -400,7 +337,7 @@ export const useGameState = () => {
   const updateTotalScore = () => {
     const currentRoundAnswers = gameState.answers[gameState.round] || [];
     const total = currentRoundAnswers
-      .filter(answer => answer != null && answer.revealed)
+      .filter((answer): answer is Answer => answer !== null && answer.revealed)
       .reduce((sum, answer) => sum + answer.points, 0);
     saveGameState({ ...gameState, totalScore: total });
   };
@@ -450,7 +387,7 @@ export const useGameState = () => {
 
 
   const getAnswerCount = (round: number) => {
-    if (round === 5) return 10; // Bonus round: 10 answers total
+    if (round === 5) return 25; // Bonus round: 5 questions × 5 answers
     return 8 - round; // 7, 6, 5, 4 for rounds 1-4
   };
 
@@ -487,16 +424,16 @@ export const useGameState = () => {
   };
 
   const resetStrikes = (team: 'left' | 'right') => {
-    // Stop any reveal sound when resetting strikes
-    if (typeof window !== 'undefined' && window.stopRevealSound) {
-      window.stopRevealSound();
-    }
-
-    // Stop any free music that might be playing
-    playAudioOnDisplay('free_music_stop');
-
     const resetStrikesObj = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     updateTeam(team, 'strikes', resetStrikesObj);
+
+    // Clear any pending audio commands to prevent unwanted sounds
+    try {
+      set(ref(database, 'family100-audio-command'), null);
+      console.log('useGameState: Cleared audio command after resetting strikes');
+    } catch (e) {
+      console.error('useGameState: Failed to clear audio command', e);
+    }
 
     toast({ title: `Strike direset untuk Tim ${team === 'left' ? 'Kiri' : 'Kanan'}` });
   };

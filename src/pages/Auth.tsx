@@ -50,10 +50,11 @@ const Auth = () => {
           navigate('/');
         }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan";
       toast({
         title: "Error",
-        description: (error as { message?: string }).message ?? "Terjadi kesalahan",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

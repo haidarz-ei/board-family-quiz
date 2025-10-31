@@ -9,6 +9,7 @@ interface DeviceSession {
   device_type: string | null;
   last_accessed_at: string;
   created_at: string;
+  user_id?: string;
 }
 
 export const useDeviceSession = () => {

@@ -7,9 +7,14 @@ import { Trash2, Play, Pause, Square, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SoundManagementTabProps {
-  gameState: any;
-  updateSoundAssignments: (assignments: Partial<any>) => void;
-  addMusic: (music: any) => void;
+  gameState: {
+    soundAssignments?: Record<string, string | null>;
+    musics?: Array<{ name: string; url: string }>;
+    currentMusic?: string;
+    musicPlaying?: boolean;
+  };
+  updateSoundAssignments: (assignments: Partial<Record<string, string | null>>) => void;
+  addMusic: (music: { name: string; url: string }) => void;
   removeMusic: (index: number) => void;
   playMusic: (musicUrl: string) => void;
   pauseMusic: () => void;
