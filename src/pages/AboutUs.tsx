@@ -115,17 +115,17 @@ const AboutUs = () => {
                 <div className="p-2 bg-white/5 rounded-lg group-hover:bg-blue-500/20 transition-colors">
                   <Mail className="w-4 h-4 text-white/70 group-hover:text-blue-400" />
                 </div>
-                <span>familyfuntime@gmail.com</span>
+                <span>familyfuntimeQ@gmail.com</span>
               </a>
             </li>
-            <li>
-              <a href="https://wa.me/628xxxxxxxxxx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
+            {/* <li>
+              <a href="https://wa.me/6285862387683" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
                 <div className="p-2 bg-white/5 rounded-lg group-hover:bg-green-500/20 transition-colors">
                   <Phone className="w-4 h-4 text-white/70 group-hover:text-green-400" />
                 </div>
-                <span>+62 8xx-xxxx-xxxx</span>
+                <span>+62 858-6238-7683</span>
               </a>
-            </li>
+            </li> */}
           </ul>
         </Section>
 
