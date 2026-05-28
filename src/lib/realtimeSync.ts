@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { getActiveRoom, getActiveRoomId } from "./roomContext";
+import { getActiveRoom, getActiveRoomId, hostTokenKey } from "./roomContext";
 
 declare global {
   interface Window {

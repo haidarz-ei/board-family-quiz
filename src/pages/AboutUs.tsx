@@ -90,7 +90,8 @@ const AboutUs = () => {
               href="https://portofolio-haidarzyan.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-blue-600/50 hover:bg-blue-600 border border-blue-500/50 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all duration-300 active:scale-95"
+              // className="bg-blue-600/50 hover:bg-blue-600 border border-blue-500/50 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all duration-300 active:scale-95"
+              className="bg-gray-500/50 border border-gray-400/50 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 opacity-50 pointer-events-none"
             >
               <Globe className="w-4 h-4" />
               {t("aboutUs.devVisit")}
@@ -111,11 +112,11 @@ const AboutUs = () => {
         <Section icon={<Mail className="w-5 h-5" />} title={t("aboutUs.contactTitle")} delay={0.3}>
           <ul className="space-y-3 mt-2">
             <li>
-              <a href="mailto:contact.haidarzyan@gmail.com" className="flex items-center gap-3 hover:text-white transition-colors group">
+              <a href="mailto:haidarzayn0@gmail.com" className="flex items-center gap-3 hover:text-white transition-colors group">
                 <div className="p-2 bg-white/5 rounded-lg group-hover:bg-blue-500/20 transition-colors">
                   <Mail className="w-4 h-4 text-white/70 group-hover:text-blue-400" />
                 </div>
-                <span>familyfuntimeQ@gmail.com</span>
+                <span>haidarzayn0@gmail.com</span>
               </a>
             </li>
             {/* <li>
