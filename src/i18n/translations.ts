@@ -195,6 +195,10 @@ export const translations = {
     "aboutUs.feat5Desc": "— Provided supporting features for this game that can be run directly on a single device, without needing to switch to other apps or platforms.",
     "aboutUs.devTitle": "Developed By",
     "aboutUs.devVisit": "Visit Web Profile",
+    "aboutUs.creditsTitle": "Credits & Attributions",
+    "aboutUs.creditSoundtrack": "Soundtrack Source:",
+    "aboutUs.creditSoundtrack1": "Upbeat Ukulele",
+    "aboutUs.creditSoundtrack2": "Pou Pooper/Hoops",
     "aboutUs.contactTitle": "Contact",
     "aboutUs.quote": "It's time to make family and friends gatherings more fun and unforgettable, enjoying educational and interactive entertainment that boosts teamwork, while experiencing the thrill of playing and practicing English through fun quiz questions.",
 
@@ -451,6 +455,10 @@ export const translations = {
     "aboutUs.feat5Desc": "— Beberapa kebutuhan yang mendukung permainan ini telah disediakan dan dapat dijalankan langsung dalam satu perangkat, tanpa perlu berpindah ke aplikasi atau platform lain.",
     "aboutUs.devTitle": "Developed By",
     "aboutUs.devVisit": "Kunjungi Web Profil",
+    "aboutUs.creditsTitle": "Kredit & Atribusi",
+    "aboutUs.creditSoundtrack": "Sumber Soundtrack:",
+    "aboutUs.creditSoundtrack1": "Upbeat Ukulele",
+    "aboutUs.creditSoundtrack2": "Pou Pooper/Hoops",
     "aboutUs.contactTitle": "Kontak",
     "aboutUs.quote": "Saatnya membuat waktu berkumpul bersama keluarga atau teman menjadi lebih seru dan tak terlupakan, menikmati hiburan edukatif dan interaktif yang memacu kekompakan tim, serta merasakan keseruan bermain sambil berlatih Bahasa Inggris melalui pertanyaan kuis yang menyenangkan.",
 

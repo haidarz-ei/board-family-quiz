@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Gamepad2, Rocket, Zap, UserCircle, Mail, Globe, Phone } from "lucide-react";
+import { ArrowLeft, Gamepad2, Rocket, Zap, UserCircle, Mail, Globe, Phone, Music } from "lucide-react";
 import { useAppSettings } from "@/contexts/SettingsContext";
 
 const Section = ({ icon, title, children, delay = 0 }: { icon: React.ReactNode; title: string; children: React.ReactNode; delay?: number }) => (
@@ -96,6 +96,15 @@ const AboutUs = () => {
               {t("aboutUs.devVisit")}
             </a>
           </div>
+        </Section>
+
+        {/* 5. Credits & Attributions */}
+        <Section icon={<Music className="w-5 h-5" />} title={t("aboutUs.creditsTitle")} delay={0.28}>
+          <p className="font-bold text-white/90 mb-1">{t("aboutUs.creditSoundtrack")}</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>{t("aboutUs.creditSoundtrack1")}</li>
+            <li>{t("aboutUs.creditSoundtrack2")}</li>
+          </ul>
         </Section>
 
         {/* 5. Kontak */}
