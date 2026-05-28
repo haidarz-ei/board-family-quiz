@@ -1,0 +1,141 @@
+/* ─── Virtual Pet Container ───────────────────────── */
+.virtual-pet-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.virtual-pet-wrapper {
+  position: absolute;
+  bottom: 4px;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Canvas Pixel Rendering ─────────────────────── */
+.virtual-pet-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* ─── Shadow ─────────────────────────────────────── */
+.pet-shadow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 6px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ─── Name Tooltip ───────────────────────────────── */
+.pet-name-tooltip {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 11px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  padding: 3px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.virtual-pet-wrapper:hover .pet-name-tooltip {
+  opacity: 1;
+}
+
+/* ─── ZZZ Sleep Particles ────────────────────────── */
+.pet-zzz {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+  color: #94a3b8;
+  pointer-events: none;
+  animation: zzz-float 2.2s ease-out forwards;
+  text-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+}
+
+.pet-zzz:nth-child(odd) {
+  animation-duration: 2.5s;
+}
+
+@keyframes zzz-float {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+    transform: translate(12px, -22px) scale(1) rotate(-12deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(22px, -44px) scale(0.7) rotate(8deg);
+  }
+}
+
+/* ─── Heart Click Effect ─────────────────────────── */
+.pet-heart {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  font-size: 18px;
+  pointer-events: none;
+  animation: heart-pop 1s ease-out forwards;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5));
+}
+
+@keyframes heart-pop {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(0);
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-12px) scale(1.4);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-28px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-42px) scale(0.6);
+  }
+}
+
+/* ─── Mobile: slightly smaller ───────────────────── */
+@media (max-width: 640px) {
+  .virtual-pet-wrapper {
+    bottom: 2px;
+  }
+  .pet-name-tooltip {
+    font-size: 10px;
+    padding: 2px 7px;
+    top: -20px;
+  }
+}
